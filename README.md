@@ -1,20 +1,13 @@
-# CXX DeathNode / ChainOfProduct / CivicEcho Project Read Me
-
-<!-- this is an instruction line; after you follow the instruction, delete the corresponding line. Do the same for all instruction lines! -->
-
-*(replace CXX above with group identifier, for example, A07 ou T22)*
-
-*(keep only your scenario name and delete the other names)*
+# A03 CivicEcho Project Read Me
 
 ## Team
 
-| Number | Name              | User                             | E-mail                              |
-| -------|-------------------|----------------------------------| ------------------------------------|
-| 11111  | Alice Network     | <https://github.com/AliceUser>   | <mailto:alice@tecnico.ulisboa.pt>   |
-| 22222  | Bob Computer      | <https://github.com/BobUser>     | <mailto:bob@tecnico.ulisboa.pt>     |
-| 33333  | Charlie Security  | <https://github.com/CharlieUser> | <mailto:charlie@tecnico.ulisboa.pt> |
+| Number  | Name              | User                                   | E-mail                                                 |
+| --------|-------------------|----------------------------------------| -------------------------------------------------------|
+| 1104147 | Diogo Rodrigues   | <https://github.com/diogotrodrigues>   | <mailto:diogo.teixeira.rodrigues@tecnico.ulisboa.pt>   |
+| 1106378 | Luca Dallalana    | <https://github.com/lucadallalana>     | <mailto:luca.dallalana@tecnico.ulisboa.pt>             |
+| 1107157 | Inês Alves        | <https://github.com/ines-alves>        | <mailto:ines.b.alves@tecnico.ulisboa.pt>               |
 
-*(fill table above with team member information)*  
 
 ![Alice](img/alice.png) ![Bob](img/bob.png) ![Charlie](img/charlie.png)
 
