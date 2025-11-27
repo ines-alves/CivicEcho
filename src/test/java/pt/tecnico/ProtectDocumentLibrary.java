@@ -9,6 +9,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 
@@ -32,6 +33,19 @@ public class ProtectDocumentLibrary {
     private byte[] decryptRSA(byte[] cipherBytes, String privKeyPath, Cipher cipher) throws Exception {
         PrivateKey privKey = RSAKeyGenerator.readPrivateKey(privKeyPath);
         cipher.init(Cipher.DECRYPT_MODE, privKey);
+        return cipher.doFinal(cipherBytes);
+    }
+
+    private byte[] signRSA(byte[] plainBytes, String privKeyPath, Cipher cipher) throws Exception {
+        PrivateKey privKey = RSAKeyGenerator.readPrivateKey(privKeyPath);
+        cipher.init(Cipher.ENCRYPT_MODE, privKey);
+        return cipher.doFinal(plainBytes);
+    }
+
+    private byte[] verifyRSA(byte[] cipherBytes, String pubKeyPath, Cipher cipher) throws Exception {
+        RSAKeyGenerator rsakg = new RSAKeyGenerator();
+        PublicKey pubKey = rsakg.readPublicKey(pubKeyPath);
+        cipher.init(Cipher.DECRYPT_MODE, pubKey);
         return cipher.doFinal(cipherBytes);
     }
 
@@ -143,6 +157,46 @@ public class ProtectDocumentLibrary {
         }
     }
     
+    public void check(String encryptedDocumentName, String decryptedDocumentName, String KeyPath) throws Exception {
+        try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
+            AESKeyGenerator aeskg = new AESKeyGenerator();
+            Key key = aeskg.read(KeyPath);
+            
+            Gson gson = new Gson();
+            
+            // Read base64 encoded string from file
+            String jsonStringFromFile = gson.fromJson(fileReader, String.class);
+            byte[] decoded = Base64.getDecoder().decode(jsonStringFromFile);
+            String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+            
+            // Parse the encrypted JSON structure
+            JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+            String cipheredTextB64 = cipheredJson.get("ciphered").getAsString();
+            String ivB64 = cipheredJson.get("iv").getAsString();
+            
+            // Get AAD as JSON object and convert to bytes
+            JsonObject aadObject = cipheredJson.get("aad").getAsJsonObject();
+            byte[] AAD = aadObject.toString().getBytes(StandardCharsets.UTF_8);
 
+            // Decode components
+            byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
+            byte[] iv = Base64.getDecoder().decode(ivB64);
+
+            // Initialize GCM cipher for decryption
+            final int TAG_LENGTH = 128;
+            GCMParameterSpec params = new GCMParameterSpec(TAG_LENGTH, iv);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            cipher.init(Cipher.DECRYPT_MODE, key, params);
+            
+            cipher.updateAAD(AAD);
+
+            try {
+                byte[] plaintext = cipher.doFinal(cipheredText);
+                System.out.println("Message is authentic");
+            } catch (AEADBadTagException ex) {
+                System.out.println("Integrity verification FAILED!");
+            }
+        }
+    }
 
 }
