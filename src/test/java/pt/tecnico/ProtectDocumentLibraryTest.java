@@ -51,21 +51,55 @@ public class ProtectDocumentLibraryTest {
             fos.write(key.getEncoded());
         }
 
-        // Generate RSA key pair
-        KeyPairGenerator rsaKeyGen = KeyPairGenerator.getInstance("RSA");
-        rsaKeyGen.initialize(2048, SecureRandom.getInstanceStrong());
-        KeyPair rsaKeyPair = rsaKeyGen.generateKeyPair();
+        // Generate citizan RSA key pair
+        KeyPairGenerator citizenKeyGen = KeyPairGenerator.getInstance("RSA");
+        citizenKeyGen.initialize(2048, SecureRandom.getInstanceStrong());
+        KeyPair citizenKeyPair = citizenKeyGen.generateKeyPair();
 
         // Save RSA private key
-        String privatekeyFile = "private_key.key";
-        try (FileOutputStream fos = new FileOutputStream(privatekeyFile)) {
-            fos.write(rsaKeyPair.getPrivate().getEncoded());
+        String citizenPrivateKeyFile = "citizen_private_key.key";
+        try (FileOutputStream fos = new FileOutputStream(citizenPrivateKeyFile)) {
+            fos.write(citizenKeyPair.getPrivate().getEncoded());
         }
 
         // Save RSA public key
-        String publickeyFile = "rsa_public.key";
-        try (FileOutputStream fos = new FileOutputStream(publickeyFile)) {
-            fos.write(rsaKeyPair.getPublic().getEncoded());
+        String citizenPublicKeyFile = "citizen_public_key.key";
+        try (FileOutputStream fos = new FileOutputStream(citizenPublicKeyFile)) {
+            fos.write(citizenKeyPair.getPublic().getEncoded());
+        }
+
+        // Generate centralized RSA key pair
+        KeyPairGenerator centralizedKeyGen = KeyPairGenerator.getInstance("RSA");
+        centralizedKeyGen.initialize(2048, SecureRandom.getInstanceStrong());
+        KeyPair centralizedKeyPair = centralizedKeyGen.generateKeyPair();
+
+        // Save RSA private key
+        String centralizedPrivateKeyFile = "centralized_private_key.key";
+        try (FileOutputStream fos = new FileOutputStream(centralizedPrivateKeyFile)) {
+            fos.write(centralizedKeyPair.getPrivate().getEncoded());
+        }
+
+        // Save RSA public key
+        String centralizedPublicKeyFile = "centralized_public_key.key";
+        try (FileOutputStream fos = new FileOutputStream(centralizedPublicKeyFile)) {
+            fos.write(centralizedKeyPair.getPublic().getEncoded());
+        }
+
+        // Generate municipality RSA key pair
+        KeyPairGenerator municipalityKeyGen = KeyPairGenerator.getInstance("RSA");
+        municipalityKeyGen.initialize(2048, SecureRandom.getInstanceStrong());
+        KeyPair municipalityKeyPair = municipalityKeyGen.generateKeyPair();
+
+        // Save municipality RSA private key
+        String municipalityPrivateKeyFile = "municipality_private_key.key";
+        try (FileOutputStream fos = new FileOutputStream(municipalityPrivateKeyFile)) {
+            fos.write(municipalityKeyPair.getPrivate().getEncoded());
+        }
+
+        // Save municipality RSA public key
+        String municipalityPublicKeyFile = "municipality_public_key.key";
+        try (FileOutputStream fos = new FileOutputStream(municipalityPublicKeyFile)) {
+            fos.write(municipalityKeyPair.getPublic().getEncoded());
         }
         
         // Encrypted output file
@@ -78,11 +112,14 @@ public class ProtectDocumentLibraryTest {
         
         try {
             // Test encryption
-            library.protect(inputFile, encryptedFile, keyFile, privatekeyFile, publickeyFile); //FIXME this is the wrong pub key btw, but it works for testing for now
+            library.protect(inputFile, encryptedFile, keyFile, citizenPrivateKeyFile, municipalityPublicKeyFile);
             System.out.println("Encryption completed successfully");
 
+            // test authenticate and resign
+            library.authenticateAndReSign(encryptedFile, encryptedFile, centralizedPrivateKeyFile, citizenPublicKeyFile);
+
             // Test decryption
-            library.unprotect(encryptedFile, decryptedFile, privatekeyFile);
+            library.unprotect(encryptedFile, decryptedFile, centralizedPublicKeyFile, municipalityPrivateKeyFile);
             System.out.println("Decryption completed successfully");
             
             // Read and verify the decrypted content
@@ -107,8 +144,12 @@ public class ProtectDocumentLibraryTest {
             // Clean up temporary files
             cleanupFile(inputFile);
             cleanupFile(keyFile);
-            cleanupFile(privatekeyFile);
-            cleanupFile(publickeyFile);
+            cleanupFile(citizenPrivateKeyFile);
+            cleanupFile(citizenPublicKeyFile);
+            cleanupFile(municipalityPrivateKeyFile);
+            cleanupFile(municipalityPublicKeyFile);
+            cleanupFile(centralizedPrivateKeyFile);
+            cleanupFile(centralizedPublicKeyFile);
             cleanupFile(encryptedFile);
             cleanupFile(decryptedFile);
         }

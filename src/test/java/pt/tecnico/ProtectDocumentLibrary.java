@@ -105,12 +105,12 @@ public class ProtectDocumentLibrary {
         return encryptedObject;
     }
 
-    public void protect(String inputDocumentName, String outputDocumentName, String asymmetricKeyPath, String privKeyPath, String municipalityKeyPath) throws Exception {
+    public void protect(String inputDocumentName, String outputDocumentName, String asymmetricKeyPath, String citizenPrivKeyPath, String municipalityKeyPath) throws Exception {
         JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName, asymmetricKeyPath, municipalityKeyPath);
         
         byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
 
-        byte[] signature = sign(ciphertextBytes, privKeyPath);
+        byte[] signature = sign(ciphertextBytes, citizenPrivKeyPath);
 
         encryptedObject.addProperty("signature", Base64.getEncoder().encodeToString(signature));
 
@@ -165,11 +165,8 @@ public class ProtectDocumentLibrary {
         }
     }
 
-    public void unprotect(String encryptedDocumentName, String decryptedDocumentName, String privKeyPath) throws Exception {
+    public void unprotect(String encryptedDocumentName, String decryptedDocumentName, String centralizedPublicKeyPath, String privKeyPath) throws Exception {
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
-            AESKeyGenerator aeskg = new AESKeyGenerator();
-            Key privkey = aeskg.read(privKeyPath);
-            
             Gson gson = new Gson();
             
             // Read base64 encoded string from file
@@ -195,6 +192,14 @@ public class ProtectDocumentLibrary {
             // Decode components
             byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
             byte[] iv = Base64.getDecoder().decode(ivB64);
+
+            String signatureB64 = cipheredJson.get("signature").getAsString();
+            byte[] signatureBytes = Base64.getDecoder().decode(signatureB64);
+            
+            boolean isVerified = verifySignature(cipheredText, signatureBytes, centralizedPublicKeyPath);
+                if (!isVerified) {
+                    throw new SecurityException("Signature verification failed!");
+                }
 
             // Initialize GCM cipher for decryption
             final int TAG_LENGTH = 128;
