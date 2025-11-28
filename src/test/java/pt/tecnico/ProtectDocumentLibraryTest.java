@@ -3,6 +3,9 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.time.Instant;
 
 import javax.crypto.KeyGenerator;
@@ -47,6 +50,23 @@ public class ProtectDocumentLibraryTest {
         try (FileOutputStream fos = new FileOutputStream(keyFile)) {
             fos.write(key.getEncoded());
         }
+
+        // Generate RSA key pair
+        KeyPairGenerator rsaKeyGen = KeyPairGenerator.getInstance("RSA");
+        rsaKeyGen.initialize(2048, SecureRandom.getInstanceStrong());
+        KeyPair rsaKeyPair = rsaKeyGen.generateKeyPair();
+
+        // Save RSA private key
+        String privatekeyFile = "private_key.key";
+        try (FileOutputStream fos = new FileOutputStream(privatekeyFile)) {
+            fos.write(rsaKeyPair.getPrivate().getEncoded());
+        }
+
+        // Save RSA public key
+        String publickeyFile = "rsa_public.key";
+        try (FileOutputStream fos = new FileOutputStream(publickeyFile)) {
+            fos.write(rsaKeyPair.getPublic().getEncoded());
+        }
         
         // Encrypted output file
         String encryptedFile = "test_encrypted.json";
@@ -58,11 +78,11 @@ public class ProtectDocumentLibraryTest {
         
         try {
             // Test encryption
-            library.protect(inputFile, encryptedFile, keyFile);
+            library.protect(inputFile, encryptedFile, keyFile, privatekeyFile, publickeyFile); //FIXME this is the wrong pub key btw, but it works for testing for now
             System.out.println("Encryption completed successfully");
-            
+
             // Test decryption
-            library.unprotect(encryptedFile, decryptedFile, keyFile);
+            library.unprotect(encryptedFile, decryptedFile, privatekeyFile);
             System.out.println("Decryption completed successfully");
             
             // Read and verify the decrypted content
@@ -87,6 +107,8 @@ public class ProtectDocumentLibraryTest {
             // Clean up temporary files
             cleanupFile(inputFile);
             cleanupFile(keyFile);
+            cleanupFile(privatekeyFile);
+            cleanupFile(publickeyFile);
             cleanupFile(encryptedFile);
             cleanupFile(decryptedFile);
         }

@@ -3,15 +3,16 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.util.Base64;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,46 +20,46 @@ import com.google.gson.JsonObject;
 
 
 public class ProtectDocumentLibrary {
-    final String CIPHER_ALGO = "AES/GCM/NoPadding";
-    final String DIGEST_ALGO = "SHA-256";
+    final String SYMMETRIC_CIPHER_ALGO = "AES/GCM/NoPadding";
+    final String SIGNATURE_ALGO = "SHA256withRSA";
+    final String ASYMMETRIC_CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
 
     /* ASYMMETRIC KEY OPERATIONS */
    
-    private byte[] encryptRSA(byte[] plainBytes, String pubKeyPath, Cipher cipher) throws Exception {
+    private byte[] encryptRSA(byte[] plainBytes, String pubKeyPath) throws Exception {
         RSAKeyGenerator rsakg = new RSAKeyGenerator();
         PublicKey pubKey = rsakg.readPublicKey(pubKeyPath);
+        Cipher cipher = Cipher.getInstance(ASYMMETRIC_CIPHER_ALGO);
         cipher.init(Cipher.ENCRYPT_MODE, pubKey);
         return cipher.doFinal(plainBytes);
     }
-    private byte[] decryptRSA(byte[] cipherBytes, String privKeyPath, Cipher cipher) throws Exception {
+    private byte[] decryptRSA(byte[] cipherBytes, String privKeyPath) throws Exception {
         PrivateKey privKey = RSAKeyGenerator.readPrivateKey(privKeyPath);
+        Cipher cipher = Cipher.getInstance(ASYMMETRIC_CIPHER_ALGO);
         cipher.init(Cipher.DECRYPT_MODE, privKey);
         return cipher.doFinal(cipherBytes);
     }
 
-    private byte[] signRSA(byte[] plainBytes, String privKeyPath, Cipher cipher) throws Exception {
-        PrivateKey privKey = RSAKeyGenerator.readPrivateKey(privKeyPath);
-        cipher.init(Cipher.ENCRYPT_MODE, privKey);
-        return cipher.doFinal(plainBytes);
+    private byte[] sign(byte[] data, String privateKeyPath) throws Exception {
+        PrivateKey privKey = RSAKeyGenerator.readPrivateKey(privateKeyPath);
+        Signature sig = Signature.getInstance(SIGNATURE_ALGO);
+        sig.initSign(privKey);
+        sig.update(data);
+        return sig.sign();
     }
 
-    private byte[] verifyRSA(byte[] cipherBytes, String pubKeyPath, Cipher cipher) throws Exception {
-        RSAKeyGenerator rsakg = new RSAKeyGenerator();
-        PublicKey pubKey = rsakg.readPublicKey(pubKeyPath);
-        cipher.init(Cipher.DECRYPT_MODE, pubKey);
-        return cipher.doFinal(cipherBytes);
+    private boolean verifySignature(byte[] data, byte[] signature, String publicKeyPath) throws Exception {
+        PublicKey pubKey = RSAKeyGenerator.readPublicKey(publicKeyPath);
+        Signature sig = Signature.getInstance(SIGNATURE_ALGO);
+        sig.initVerify(pubKey);
+        sig.update(data);
+        boolean verified = sig.verify(signature);
+        return verified;
     }
 
-    private byte[] digest(byte[] data) throws Exception {
-        MessageDigest messageDigest = MessageDigest.getInstance(DIGEST_ALGO);
-        messageDigest.update(data);
-        return messageDigest.digest();
-    }
-
-
-    public void protect(String inputDocumentName, String outputDocumentName, String KeyPath) throws Exception {
+    private JsonObject encryptGCM(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath) throws Exception {
         AESKeyGenerator aeskg = new AESKeyGenerator();
-        Key secretKey = aeskg.read(KeyPath);
+        Key secretKey = aeskg.read(symmetricKeyPath);
 
         // Read the JSON file as an object
         JsonObject jsonObject;
@@ -86,17 +87,34 @@ public class ProtectDocumentLibrary {
 
         // Initialize cipher with GCM
         GCMParameterSpec params = new GCMParameterSpec(TAG_LENGTH, iv);
-        Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+        Cipher cipher = Cipher.getInstance(SYMMETRIC_CIPHER_ALGO);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, params);
         
         cipher.updateAAD(AAD);
 
         byte[] cipherText = cipher.doFinal(plainBytes);
 
+        byte[] cipherKey = encryptRSA(secretKey.getEncoded(), municipalityKeyPath);
+
         JsonObject encryptedObject = new JsonObject();
         encryptedObject.addProperty("ciphered", Base64.getEncoder().encodeToString(cipherText));
         encryptedObject.addProperty("iv", Base64.getEncoder().encodeToString(iv));
         encryptedObject.add("aad", aadObject); // Store AAD as JSON object, not string
+        encryptedObject.addProperty("key", Base64.getEncoder().encodeToString(cipherKey));
+
+        return encryptedObject;
+    }
+
+    public void protect(String inputDocumentName, String outputDocumentName, String asymmetricKeyPath, String privKeyPath, String municipalityKeyPath) throws Exception {
+        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName, asymmetricKeyPath, municipalityKeyPath);
+        
+        byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
+
+        byte[] signature = sign(ciphertextBytes, privKeyPath);
+
+        encryptedObject.addProperty("signature", Base64.getEncoder().encodeToString(signature));
+
+        System.out.println(encryptedObject.toString());
 
         // Encode the entire JSON as base64 string
         String finalJsonString = new Gson().toJson(encryptedObject);
@@ -109,10 +127,48 @@ public class ProtectDocumentLibrary {
         }
     }
 
-    public void unprotect(String encryptedDocumentName, String decryptedDocumentName, String KeyPath) throws Exception {
+    public void authenticateAndReSign(String encryptedDocumentName, String reSignedDocumentName, String centralPrivateKeyPath, String citizenPublicKeyPath) throws Exception {
+        try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
+            Gson gson = new Gson();
+            
+            // Read base64 encoded string from file
+            String jsonStringFromFile = gson.fromJson(fileReader, String.class);
+            byte[] decoded = Base64.getDecoder().decode(jsonStringFromFile);
+            String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+            
+            // Parse the encrypted JSON structure
+            JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+            String cipheredTextB64 = cipheredJson.get("ciphered").getAsString();
+            byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
+            
+            String signatureB64 = cipheredJson.get("signature").getAsString();
+            byte[] signatureBytes = Base64.getDecoder().decode(signatureB64);
+
+            // Verify signature
+            boolean isVerified = verifySignature(cipheredText, signatureBytes, citizenPublicKeyPath);
+            if (!isVerified) {
+                throw new SecurityException("Signature verification failed!");
+            }
+
+            // Re-sign the ciphertext
+            byte[] newSignature = sign(cipheredText, centralPrivateKeyPath);
+            cipheredJson.addProperty("signature", Base64.getEncoder().encodeToString(newSignature));
+
+            // Write re-signed JSON back to file
+            String finalJsonString = new Gson().toJson(cipheredJson);
+            String base64Encoded = Base64.getEncoder().encodeToString(finalJsonString.getBytes(StandardCharsets.UTF_8));
+        
+            try (FileWriter fileWriter = new FileWriter(reSignedDocumentName)) {
+                Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+                prettyGson.toJson(base64Encoded, fileWriter);
+            }
+        }
+    }
+
+    public void unprotect(String encryptedDocumentName, String decryptedDocumentName, String privKeyPath) throws Exception {
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
             AESKeyGenerator aeskg = new AESKeyGenerator();
-            Key key = aeskg.read(KeyPath);
+            Key privkey = aeskg.read(privKeyPath);
             
             Gson gson = new Gson();
             
@@ -123,6 +179,12 @@ public class ProtectDocumentLibrary {
             
             // Parse the encrypted JSON structure
             JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+            
+            String cipheredKeyB64 = cipheredJson.get("key").getAsString();
+            byte[] cipheredKey = Base64.getDecoder().decode(cipheredKeyB64);
+            byte[] decryptedKeyBytes = decryptRSA(cipheredKey, privKeyPath);
+            Key key = new SecretKeySpec(decryptedKeyBytes, 0, 16, "AES");
+
             String cipheredTextB64 = cipheredJson.get("ciphered").getAsString();
             String ivB64 = cipheredJson.get("iv").getAsString();
             
@@ -137,7 +199,7 @@ public class ProtectDocumentLibrary {
             // Initialize GCM cipher for decryption
             final int TAG_LENGTH = 128;
             GCMParameterSpec params = new GCMParameterSpec(TAG_LENGTH, iv);
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            Cipher cipher = Cipher.getInstance(SYMMETRIC_CIPHER_ALGO);
             cipher.init(Cipher.DECRYPT_MODE, key, params);
             
             cipher.updateAAD(AAD);
@@ -185,7 +247,7 @@ public class ProtectDocumentLibrary {
             // Initialize GCM cipher for decryption
             final int TAG_LENGTH = 128;
             GCMParameterSpec params = new GCMParameterSpec(TAG_LENGTH, iv);
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGO);
+            Cipher cipher = Cipher.getInstance(SYMMETRIC_CIPHER_ALGO);
             cipher.init(Cipher.DECRYPT_MODE, key, params);
             
             cipher.updateAAD(AAD);
