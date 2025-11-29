@@ -24,6 +24,72 @@ public class ProtectDocumentLibrary {
     final String SIGNATURE_ALGO = "SHA256withRSA";
     final String ASYMMETRIC_CIPHER_ALGO = "RSA/ECB/PKCS1Padding";
 
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            printUsage();
+            return;
+        }
+
+        ProtectDocumentLibrary library = new ProtectDocumentLibrary();
+        
+        try {
+            System.out.println("arg 0!"+ args[0]);
+            switch (args[0]) {
+
+                case "protect":
+                    if (args.length != 6) {
+                        System.err.println("Usage: protect <inputDocument> <outputDocument> <symmetricKey> <citizenPrivateKey> <municipalityPublicKey>");
+                        return;
+                    }
+                    library.protect(args[1], args[2], args[3], args[4], args[5]);
+                    System.out.println("Document protected successfully!");
+                    break;
+                    
+                case "authenticate-resign":
+                    if (args.length != 5) {
+                        System.err.println("Usage: authenticate-resign <encryptedDocument> <reSignedDocument> <centralPrivateKey> <citizenPublicKey>");
+                        return;
+                    }
+                    library.authenticateAndReSign(args[1], args[2], args[3], args[4]);
+                    System.out.println("Document authenticated and re-signed successfully!");
+                    break;
+                    
+                case "unprotect":
+                    if (args.length != 5) {
+                        System.err.println("Usage: unprotect <encryptedDocument> <decryptedDocument> <centralPublicKey> <municipalityPrivateKey>");
+                        return;
+                    }
+                    library.unprotect(args[1], args[2], args[3], args[4]);
+                    System.out.println("Document unprotected successfully!");
+                    break;
+                    
+                case "check":
+                    if (args.length != 4) {
+                        System.err.println("Usage: check <encryptedDocument> <decryptedDocument> <symmetricKey>");
+                        return;
+                    }
+                    library.check(args[1], args[2], args[3]);
+                    break;
+                    
+                default:
+                    System.err.println("Unknown command: " + args[0]);
+                    printUsage();
+            }
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: <command> [arguments]");
+        System.out.println("Commands:");
+        System.out.println("  protect <inputDocument> <outputDocument> <symmetricKey> <citizenPrivateKey> <municipalityPublicKey>");
+        System.out.println("  authenticate-resign <encryptedDocument> <reSignedDocument> <centralPrivateKey> <citizenPublicKey>");
+        System.out.println("  unprotect <encryptedDocument> <decryptedDocument> <centralPublicKey> <municipalityPrivateKey>");
+        System.out.println("  check <encryptedDocument> <decryptedDocument> <symmetricKey>");
+    }
+
     /* ASYMMETRIC KEY OPERATIONS */
    
     private byte[] encryptRSA(byte[] plainBytes, String pubKeyPath) throws Exception {
@@ -105,8 +171,8 @@ public class ProtectDocumentLibrary {
         return encryptedObject;
     }
 
-    public void protect(String inputDocumentName, String outputDocumentName, String asymmetricKeyPath, String citizenPrivKeyPath, String municipalityKeyPath) throws Exception {
-        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName, asymmetricKeyPath, municipalityKeyPath);
+    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String citizenPrivKeyPath, String municipalityKeyPath) throws Exception {
+        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName,symmetricKeyPath, municipalityKeyPath);
         
         byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
 
