@@ -108,6 +108,14 @@
 								<commandLineArgument>check</commandLineArgument>
 							</commandLineArguments>
 						</program>
+						<!-- Help command -->
+						<program>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<id>help</id>
+							<commandLineArguments>
+								<commandLineArgument>help</commandLineArgument>
+							</commandLineArguments>
+						</program>
 					</programs>
 					<assembleDirectory>${project.build.directory}/appassembler</assembleDirectory>
 					<extraJvmArguments>-Xms256m</extraJvmArguments>

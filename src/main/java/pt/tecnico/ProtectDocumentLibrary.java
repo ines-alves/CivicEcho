@@ -70,7 +70,9 @@ public class ProtectDocumentLibrary {
                     }
                     library.check(args[1], args[2], args[3]);
                     break;
-                    
+                case "help":
+                    printUsage();
+                    break;
                 default:
                     System.err.println("Unknown command: " + args[0]);
                     printUsage();
@@ -85,9 +87,25 @@ public class ProtectDocumentLibrary {
         System.out.println("Usage: <command> [arguments]");
         System.out.println("Commands:");
         System.out.println("  protect <inputDocument> <outputDocument> <symmetricKey> <citizenPrivateKey> <municipalityPublicKey>");
-        System.out.println("  authenticate-resign <encryptedDocument> <reSignedDocument> <centralPrivateKey> <citizenPublicKey>");
-        System.out.println("  unprotect <encryptedDocument> <decryptedDocument> <centralPublicKey> <municipalityPrivateKey>");
-        System.out.println("  check <encryptedDocument> <decryptedDocument> <symmetricKey>");
+        System.out.println("     • Encrypts a document using AES-GCM with a symmetric key");
+        System.out.println("     • Encrypts the symmetric key with the municipality's public RSA key");
+        System.out.println("     • Signs the ciphertext with the citizen's private RSA key");
+        System.out.println("     • Outputs a base64-encoded JSON containing encrypted data, IV, AAD, encrypted key, and signature");
+        
+        System.out.println("\n  authenticate-resign <encryptedDocument> <reSignedDocument> <centralPrivateKey> <citizenPublicKey>");
+        System.out.println("     • Verifies the citizen's signature on the encrypted document");
+        System.out.println("     • If valid, re-signs the ciphertext with the central party's private RSA key");
+        System.out.println("     • Used by central party to authenticate and take responsibility for the document");
+        
+        System.out.println("\n  unprotect <encryptedDocument> <decryptedDocument> <centralPublicKey> <municipalityPrivateKey>");
+        System.out.println("     • Verifies the central partys's signature on the encrypted document");
+        System.out.println("     • Decrypts the symmetric key using municipality's private RSA key");
+        System.out.println("     • Decrypts the document using AES-GCM with the recovered symmetric key");
+        
+        System.out.println("\n  check <encryptedDocument> <decryptedDocument> <symmetricKey>");
+        System.out.println("     • Verifies the integrity and authenticity of the encrypted document");
+        System.out.println("     • Uses the provided symmetric key to attempt decryption");
+        System.out.println("     • Checks if the GCM authentication tag is valid (integrity check)");
     }
 
     /* ASYMMETRIC KEY OPERATIONS */
