@@ -56,13 +56,22 @@ public class SocketUtils {
     }
 
     public static String getLocationFromSocketMessage(String socketMessage) throws Exception {
-    
+
         byte[] decoded = Base64.getDecoder().decode(socketMessage);
         String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
         JsonObject aadObject = jsonObject.get("aad").getAsJsonObject();
         return aadObject.get("location").getAsString();
+    }
+
+    public static String getOperationFromSocketMessage(String socketMessage) throws Exception {
+        byte[] decoded = Base64.getDecoder().decode(socketMessage);
+        String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+        JsonObject aadObject = jsonObject.get("aad").getAsJsonObject();
+        return  aadObject.get("operation").getAsString();
     }
 
     public static void readSocketToJsonFile(Socket socket, String outputFileName) throws IOException {

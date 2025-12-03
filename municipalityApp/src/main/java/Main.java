@@ -5,6 +5,5 @@ public class Main {
         System.out.println("Municipality App Started");
 
         MessageProcessor processor = new MessageProcessor();
-        processor.demonstrateProcessing();
     }
 }
