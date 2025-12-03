@@ -1,0 +1,240 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>pt.tecnico.sirs</groupId>
+	<artifactId>utils</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>${project.artifactId}</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<gson.version>2.10.1</gson.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<appassembler-maven-plugin.version>2.1.0</appassembler-maven-plugin.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${gson.version}</version>
+		</dependency>
+		<!-- JUnit -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.6.0</version>
+            <scope>test</scope>
+        </dependency>
+		<!--Dependencies needed for Java 11 -->
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>javax.annotation-api</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<sourceDirectory>src/main/java</sourceDirectory>
+		<testSourceDirectory>src/test/java</testSourceDirectory>
+		
+		<plugins>
+			<!-- Compiler Plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+			
+			<!-- AppAssembler Plugin -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>appassembler-maven-plugin</artifactId>
+				<version>${appassembler-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<phase>install</phase>
+						<goals>
+							<goal>assemble</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<programs>
+						<!-- Protect command -->
+						<program>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<id>protect</id>
+							<commandLineArguments>
+								<commandLineArgument>protect</commandLineArgument>
+							</commandLineArguments>
+						</program>
+						<!-- Authenticate and re-sign command -->
+						<program>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<id>authenticate-resign</id>
+							<commandLineArguments>
+								<commandLineArgument>authenticate-resign</commandLineArgument>
+							</commandLineArguments>
+						</program>
+						<!-- Unprotect command -->
+						<program>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<id>unprotect</id>
+							<commandLineArguments>
+								<commandLineArgument>unprotect</commandLineArgument>
+							</commandLineArguments>
+						</program>
+						<!-- Check command -->
+						<program>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<id>check</id>
+							<commandLineArguments>
+								<commandLineArgument>check</commandLineArgument>
+							</commandLineArguments>
+						</program>
+						<!-- Help command -->
+						<program>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<id>help</id>
+							<commandLineArguments>
+								<commandLineArgument>help</commandLineArgument>
+							</commandLineArguments>
+						</program>
+					</programs>
+					<assembleDirectory>${project.build.directory}/appassembler</assembleDirectory>
+					<extraJvmArguments>-Xms256m</extraJvmArguments>
+				</configuration>
+			</plugin>
+		</plugins>
+		
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>exec-maven-plugin</artifactId>
+					<version>1.6.0</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>java</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<killAfter>-1</killAfter>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<profiles>
+		<!-- Protect document (for testing with exec plugin) -->
+		<profile>
+			<id>protect</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<configuration>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<arguments>
+								<argument>protect</argument>
+								<argument>${inputDocument}</argument>
+								<argument>${outputDocument}</argument>
+								<argument>${symmetricKey}</argument>
+								<argument>${citizenPrivateKey}</argument>
+								<argument>${municipalityPublicKey}</argument>
+							</arguments>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- Authenticate and re-sign document (for testing with exec plugin) -->
+		<profile>
+			<id>authenticate-resign</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<configuration>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<arguments>
+								<argument>authenticate-resign</argument>
+								<argument>${encryptedDocument}</argument>
+								<argument>${reSignedDocument}</argument>
+								<argument>${centralPrivateKey}</argument>
+								<argument>${citizenPublicKey}</argument>
+							</arguments>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- Unprotect document (for testing with exec plugin) -->
+		<profile>
+			<id>unprotect</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<configuration>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<arguments>
+								<argument>unprotect</argument>
+								<argument>${encryptedDocument}</argument>
+								<argument>${decryptedDocument}</argument>
+								<argument>${centralPublicKey}</argument>
+								<argument>${municipalityPrivateKey}</argument>
+							</arguments>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- Check document integrity (for testing with exec plugin) -->
+		<profile>
+			<id>check</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<configuration>
+							<mainClass>pt.tecnico.ProtectDocumentLibrary</mainClass>
+							<arguments>
+								<argument>check</argument>
+								<argument>${encryptedDocument}</argument>
+								<argument>${decryptedDocument}</argument>
+								<argument>${symmetricKey}</argument>
+							</arguments>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

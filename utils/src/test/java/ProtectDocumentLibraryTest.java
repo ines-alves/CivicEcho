@@ -1,4 +1,3 @@
-package pt.tecnico;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -16,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-
+import report.ProtectDocumentLibrary;
 public class ProtectDocumentLibraryTest {
 
     @Test 

@@ -1,4 +1,4 @@
-package pt.tecnico;
+package keys;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
