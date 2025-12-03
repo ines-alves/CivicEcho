@@ -10,40 +10,103 @@ import java.util.Scanner;
 public class ReportBuilder {
 
     private final Scanner scanner;
+    private final Report report;
 
-    public ReportBuilder(Scanner scanner) {
+    public ReportBuilder(Scanner scanner, Report report) {
         this.scanner = scanner;
+        this.report = report;
     }
 
-    public Report buildReportInteractively() {
-        Report report = new Report();
+    public boolean buildReportInteractively() { // returns true if the report was created successfully
+        System.out.println("\n--- CREATE REPORT ---");
 
         report.setReportId(IdGenerator.generateId("echo_"));
         report.setTimestamp(Instant.now().toString());
         report.setCoordinates(new Coordinates());
 
-        editCategory(report);
-        editLocation(report);
-        editCoordinates(report);
-        editDescription(report);
+        editCategory();
+        editLocation();
+        editCoordinates();
+        editDescription();
 
-        return report;
+        while (true) {
+            System.out.println("\n--- FINAL PREVIEW ---");
+            System.out.println(report.toPrettyJson());
+
+            System.out.println("\noptions:");
+            System.out.println("s - Save report");
+            System.out.println("e - Edit report");
+            System.out.println("d - Delete / Cancel");
+
+            System.out.print("Choose: ");
+            String op = scanner.nextLine().trim().toLowerCase();
+
+            switch (op) {
+                case "s":
+                    System.out.println("\nReport saved successfully.");
+                    return true;
+
+                case "e":
+                    editReport();
+                    break;
+
+                case "d":
+                    System.out.println("\nReport discarded.");
+                    return false;
+
+                default:
+                    System.out.println("\nInvalid option.");
+            }
+        }
     }
 
-    // ---------- EDITABLE FIELDS -----------
+    private void editReport() {
+        while (true) {
+            System.out.println("\n--- EDIT REPORT ---");
+            System.out.println("1 - Edit category");
+            System.out.println("2 - Edit location");
+            System.out.println("3 - Edit coordinates");
+            System.out.println("4 - Edit description");
+            System.out.println("0 - Done editing");
 
-    public void editCategory(Report r) {
+            System.out.print("Option: ");
+            String opt = scanner.nextLine().trim();
+
+            switch (opt) {
+                case "1":
+                    editCategory();
+                    break;
+                case "2":
+                    editLocation();
+                    break;
+                case "3":
+                    editCoordinates();
+                    break;
+                case "4":
+                    editDescription();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    // ---------- edit AUX -----------
+
+    public void editCategory() {
         System.out.print("Category: ");
-        r.setCategory(scanner.nextLine().trim());
+        report.setCategory(scanner.nextLine().trim());
     }
 
-    public void editLocation(Report r) {
+    public void editLocation() {
         System.out.print("Location: ");
-        r.setLocation(scanner.nextLine().trim());
+        report.setLocation(scanner.nextLine().trim());
     }
 
-    public void editCoordinates(Report r) {
-        Coordinates c = r.getCoordinates();
+    public void editCoordinates() {
+        Coordinates c = report.getCoordinates();
         if (c == null) c = new Coordinates();
 
         System.out.print("Latitude: ");
@@ -52,12 +115,12 @@ public class ReportBuilder {
         System.out.print("Longitude: ");
         c.longitude = readDouble();
 
-        r.setCoordinates(c);
+        report.setCoordinates(c);
     }
 
-    public void editDescription(Report r) {
+    public void editDescription() {
         System.out.print("Description: ");
-        r.setDescription(scanner.nextLine().trim());
+        report.setDescription(scanner.nextLine().trim());
     }
 
     private double readDouble() {
