@@ -1,4 +1,3 @@
-package app;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -83,14 +82,14 @@ public class CentralizedParty {
                     SocketUtils.readSocketToJsonFile(socket, tempFileName);
                                         
                     // Forward to municipality
-                    String serverResponse = connectToMunicipalityAndForward(tempFileNameResign);
+                    //String serverResponse = connectToMunicipalityAndForward(tempFileNameResign);
                     
                     // Delete the temporary file after forwarding
                     deleteFile(tempFileName, tempFileNameResign);
                     
-                    String response = "JSON message processed by centralized party | Municipality response: " + serverResponse;
+                    //String response = "JSON message processed by centralized party | Municipality response: " + serverResponse;
                     
-                    SocketUtils.writeToSocket(socket, response);
+                    SocketUtils.writeToSocket(socket, "we did it");
                     System.out.printf("Sent response to client%n");
                     
                 } catch (IOException i) {
@@ -159,6 +158,6 @@ public class CentralizedParty {
         System.setProperty("javax.net.ssl.trustStore", "../certificates/centralized-party/servertruststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
         // Start the centralized party
-        startCentralizedParty(6000);
+        startCentralizedParty(8090);
     }
 }

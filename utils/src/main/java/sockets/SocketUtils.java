@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -74,24 +76,27 @@ public class SocketUtils {
     public static void readSocketToJsonFile(Socket socket, String outputFileName) throws IOException {
 
         String jsonString = readFromSocket(socket);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonObject jsonObject = gson.fromJson(jsonString, JsonObject.class);
+        Gson gson = new Gson();
+  
+        byte[] decoded = Base64.getDecoder().decode(jsonString);
+        String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+
+        JsonObject jsonObject = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
         
         try (FileWriter writer = new FileWriter(outputFileName)) {
-            gson.toJson(jsonObject, writer);
+            Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+            prettyGson.toJson(jsonObject, writer);
         }
     }
 
     public static void writeJsonFileToSocket(Socket socket, String jsonFileName) throws IOException {
         Gson gson = new Gson();
-        JsonObject jsonObject;
+        String jsonMessage;
         
         try (FileReader reader = new FileReader(jsonFileName)) {
-            jsonObject = gson.fromJson(reader, JsonObject.class);
+            jsonMessage = gson.fromJson(reader, String.class);
         }
-        
-        String jsonMessage = jsonObject.toString();
-        
+                
         writeToSocket(socket, jsonMessage);
     }
 

@@ -1,14 +1,15 @@
 package service;
 
-import model.Report;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import java.time.LocalDate;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import model.Report;
 
 public class ReportStorage {
 
@@ -21,9 +22,10 @@ public class ReportStorage {
 
             String filename = DIRECTORY + report.getReportId() + ".json";
 
-            FileWriter writer = new FileWriter(filename);
-            writer.write(report.toPrettyJson());
-            writer.close();
+            try (FileWriter fileWriter = new FileWriter(filename)) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                gson.toJson(report.toPrettyJson(), fileWriter);
+            }
 
         } catch (IOException e) {
             System.out.println("Error saving file: " + e.getMessage());

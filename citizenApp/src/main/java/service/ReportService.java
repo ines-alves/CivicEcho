@@ -1,20 +1,16 @@
 package service;
 
-import model.Report;
-import sockets.SocketUtils;
-import report.ProtectDocumentLibrary;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.io.File;
-import java.io.IOException;
 import javax.net.ssl.SSLSocket;
+
+import model.Report;
+import report.ProtectDocumentLibrary;
+import sockets.SocketUtils;
 
 public class ReportService {
 
-    private static final String SYMMETRIC_KEY_PATH = "symmetricKey.key";
-    private static final String CITIZEN_PRIV_KEY_PATH = "citizen_priv.key";
-    private static final String MUNICIPALITY_PUB_KEY_PATH = "municipality_pub.key";
+    private static final String SYMMETRIC_KEY_PATH = "../test_key.key";
+    private static final String CITIZEN_PRIV_KEY_PATH = "../alice.privkey";
+    private static final String MUNICIPALITY_PUB_KEY_PATH = "../bob.pubkey";
     private static final String TEMP_FILE_DIR = "temp_files/";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
 

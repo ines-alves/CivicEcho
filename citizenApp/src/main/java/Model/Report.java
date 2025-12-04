@@ -1,7 +1,6 @@
 package model;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 public class Report {
 
@@ -37,8 +36,17 @@ public class Report {
     public String getDescription() { return description; }
     public void setDescription(String desc) { this.description = desc; }
 
-    public String toPrettyJson() {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.toJson(this);
+    public JsonObject toPrettyJson() {
+        JsonObject reportJson = new JsonObject();
+        reportJson.addProperty("report_id", this.report_id);
+        reportJson.addProperty("timestamp", this.timestamp);
+        reportJson.addProperty("category", this.category);
+        reportJson.addProperty("location", this.location);
+        JsonObject coordinatesJson = new JsonObject();
+        coordinatesJson.addProperty("latitude", this.coordinates.latitude);
+        coordinatesJson.addProperty("longitude", this.coordinates.longitude);
+        reportJson.add("coordinates", coordinatesJson);
+        reportJson.addProperty("description", this.description);
+        return reportJson;
     }
 }
