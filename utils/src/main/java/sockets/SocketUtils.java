@@ -62,6 +62,15 @@ public class SocketUtils {
         }
     }
 
+    public static String getOperationFromJsonFile(String fileName) throws Exception {
+        Gson gson = new Gson();
+        try (FileReader reader = new FileReader(fileName)) {
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonObject aad = jsonObject.getAsJsonObject("aad");
+            return aad.get("operation").getAsString();
+        }
+    }
+
     public static void readSocketToJsonFile(Socket socket, String outputFileName) throws IOException {
 
         String jsonString = readFromSocket(socket);

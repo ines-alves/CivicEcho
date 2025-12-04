@@ -24,7 +24,7 @@ public class CLIController {
 
             switch (option) {
                 case "1":
-                    reportController.startCreateFlow(scanner);
+                    reportController.createReport(scanner);
                     break;
                 case "2":
                 case "3":
