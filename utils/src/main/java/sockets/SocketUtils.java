@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -55,14 +53,13 @@ public class SocketUtils {
         }
     }
 
-    public static String getLocationFromSocketMessage(String socketMessage) throws Exception {
-    
-        byte[] decoded = Base64.getDecoder().decode(socketMessage);
-        String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+    public static String getLocationFromJsonFile(String fileName) throws IOException {
         Gson gson = new Gson();
-        JsonObject jsonObject = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
-        JsonObject aadObject = jsonObject.get("aad").getAsJsonObject();
-        return aadObject.get("location").getAsString();
+        try (FileReader reader = new FileReader(fileName)) {
+            JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+            JsonObject aad = jsonObject.getAsJsonObject("aad");
+            return aad.get("location").getAsString();
+        }
     }
 
     public static void readSocketToJsonFile(Socket socket, String outputFileName) throws IOException {
