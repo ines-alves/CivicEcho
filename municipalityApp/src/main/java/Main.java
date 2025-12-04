@@ -5,5 +5,8 @@ public class Main {
         System.out.println("Municipality App Started");
 
         MessageProcessor processor = new MessageProcessor();
+
+        // Test report creation to database
+        processor.testCreateReport();
     }
 }

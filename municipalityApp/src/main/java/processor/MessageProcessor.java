@@ -19,6 +19,36 @@ public class MessageProcessor {
         this.socketUtils = new SocketUtils();
     }
 
+    public void testCreateReport() {
+        System.out.println("=== MUNICIPALITY TEST DEBUG ===");
+
+        System.out.println("Step 1: Creating test report object...");
+        model.Report testReport = new model.Report();
+        testReport.setReportId("test_report_001");
+        testReport.setCategory("Infrastructure");
+        testReport.setDescription("Test pothole on main street");
+        testReport.setTimestamp("2024-12-03T15:30:00Z");
+
+        model.Report.Coordinates coords = new model.Report.Coordinates();
+        coords.latitude = 38.7169;
+        coords.longitude = -9.1395;
+        testReport.setCoordinates(coords);
+
+        String location = "Lisbon";
+
+        System.out.println("Report created with ID: " + testReport.getReportId());
+        System.out.println("Report JSON: " + testReport.toPrettyJson());
+
+        System.out.println("Step 2: Storing report in database...");
+        reportController.createReport(testReport, location);
+
+        System.out.println("Step 3: Reading report back from database...");
+        reportController.readReport(testReport.getReportId());
+
+        System.out.println("Step 4: Test completed successfully!");
+        System.out.println("=== MUNICIPALITY TEST DEBUG END ===");
+    }
+
     public void processSecureDocument(String base64SecureDocument) {
         try {
             String location = socketUtils.getLocationFromSocketMessage(base64SecureDocument);
@@ -41,14 +71,6 @@ public class MessageProcessor {
                 break;
             case "read":
                 reportController.readReport(report.getReportId());
-                break;
-            case "update":
-                reportController.updateReport(report, location);
-                System.out.println("Report updated: " + report.getReportId());
-                break;
-            case "delete":
-                reportController.deleteReport(report.getReportId());
-                System.out.println("Report deleted: " + report.getReportId());
                 break;
             default:
                 System.err.println("Unknown operation: " + operation);

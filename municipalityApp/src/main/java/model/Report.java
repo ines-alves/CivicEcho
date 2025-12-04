@@ -41,4 +41,9 @@ public class Report {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(this);
     }
+
+    public static Report fromJson(String json) {
+        Gson gson = new Gson();
+        return gson.fromJson(json, Report.class);
+    }
 }
