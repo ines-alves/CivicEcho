@@ -43,7 +43,7 @@ public class ProtectDocumentLibrary {
                         System.err.println("Usage: protect <inputDocument> <outputDocument> <symmetricKey> <citizenPrivateKey> <municipalityPublicKey>");
                         return;
                     }
-                    library.protect(args[1], args[2], args[3], args[4], args[5]);
+                    library.protect(args[1], args[2], args[3], args[4], args[5], "CREATE");
                     System.out.println("Document protected successfully!");
                     break;
                     
@@ -143,7 +143,7 @@ public class ProtectDocumentLibrary {
         return verified;
     }
 
-    private JsonObject encryptGCM(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath) throws Exception {
+    private JsonObject encryptGCM(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath, String operation) throws Exception {
         AESKeyGenerator aeskg = new AESKeyGenerator();
         Key secretKey = aeskg.read(symmetricKeyPath);
 
@@ -163,6 +163,7 @@ public class ProtectDocumentLibrary {
         JsonObject aadObject = new JsonObject();
         aadObject.addProperty("timestamp", jsonObject.get("timestamp").getAsString());
         aadObject.addProperty("location", jsonObject.get("location").getAsString());
+        aadObject.addProperty("operation", operation);
         
         // Convert AAD JSON object to bytes
         byte[] AAD = aadObject.toString().getBytes(StandardCharsets.UTF_8);
@@ -191,8 +192,8 @@ public class ProtectDocumentLibrary {
         return encryptedObject;
     }
 
-    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String citizenPrivKeyPath, String municipalityKeyPath) throws Exception {
-        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName,symmetricKeyPath, municipalityKeyPath);
+    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String citizenPrivKeyPath, String municipalityKeyPath, String operation) throws Exception {
+        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName,symmetricKeyPath, municipalityKeyPath, operation);
         
         byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
 
