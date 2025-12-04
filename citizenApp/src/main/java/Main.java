@@ -8,13 +8,8 @@ public class Main {
         System.setProperty("javax.net.ssl.keyStorePassword", "changeme");
         System.setProperty("javax.net.ssl.trustStore", "../certificates/clients/citizen1/usertruststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
-        if (args.length == 1) {
-            int port = Integer.parseInt(args[0]);
-            CLIController cli = new CLIController();
-            cli.start("localhost", port); //FIXME later pass the correct address
-        } else {
-            System.out.println("Must provide port number as argument");
-            return;
-        }
+
+        CLIController cli = new CLIController();
+        cli.start("192.168.0.10", 8090);
     }
 }
