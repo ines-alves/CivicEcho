@@ -82,14 +82,14 @@ public class CentralizedParty {
                     SocketUtils.readSocketToJsonFile(socket, tempFileName);
                                         
                     // Forward to municipality
-                    //String serverResponse = connectToMunicipalityAndForward(tempFileNameResign);
-                    
+                    String serverResponse = connectToMunicipalityAndForward(tempFileName);
+
                     // Delete the temporary file after forwarding
                     deleteFile(tempFileName, tempFileNameResign);
+
+                    String response = "JSON message processed by centralized party | Municipality response: " + serverResponse;
                     
-                    //String response = "JSON message processed by centralized party | Municipality response: " + serverResponse;
-                    
-                    SocketUtils.writeToSocket(socket, "we did it");
+                    SocketUtils.writeToSocket(socket, response);
                     System.out.printf("Sent response to client%n");
                     
                 } catch (IOException i) {
@@ -133,8 +133,8 @@ public class CentralizedParty {
     }
 
     private static void initMunicipalityMap() {
-        municipalityMap.put("Lisbon", new MunicipalityInfo("127.0.0.1", 6001));
-        municipalityMap.put("Porto", new MunicipalityInfo("127.0.0.1", 6002));
+        municipalityMap.put("Lisbon", new MunicipalityInfo("192.168.1.1", 6001));
+        municipalityMap.put("Porto", new MunicipalityInfo("127.0.0.1", 6002)); // Porto still localhost for now
     }
 
     private static void deleteFile(String fileName, String fileNameResign) {

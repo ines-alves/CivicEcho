@@ -1,4 +1,4 @@
-package database;
+package service;
 
 import model.Report;
 import com.google.gson.Gson;
@@ -41,9 +41,15 @@ public class DatabaseService {
         System.out.println("Request to send: " + request);
 
         try {
-            System.out.println("Creating socket connection...");
-            java.net.Socket socket = new java.net.Socket(DB_HOST, DB_PORT);
-            System.out.println("Socket connected successfully!");
+            System.out.println("Creating SSL socket connection...");
+            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocket socket = (SSLSocket) factory.createSocket(DB_HOST, DB_PORT);
+
+            // Configure SSL settings to match database server (using CentralizedParty certs)
+            socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
+            socket.setEnabledProtocols(new String[] { "TLSv1.3" });
+
+            System.out.println("SSL socket connected successfully!");
 
             System.out.println("Getting output stream...");
             java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);

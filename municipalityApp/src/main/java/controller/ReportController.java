@@ -1,7 +1,7 @@
 package controller;
 
 import model.Report;
-import database.DatabaseService;
+import service.DatabaseService;
 
 public class ReportController {
     private final DatabaseService databaseService;

@@ -51,8 +51,8 @@ public class MessageProcessor {
 
     public void processSecureDocument(String base64SecureDocument) {
         try {
-            String location = socketUtils.getLocationFromSocketMessage(base64SecureDocument);
-            String operation = socketUtils.getOperationFromSocketMessage(base64SecureDocument);
+            String location = socketUtils.getLocationFromJsonFile(base64SecureDocument);
+            String operation = socketUtils.getOperationFromJsonFile(base64SecureDocument);
             Report decryptedReport = decryptSecureDocument(base64SecureDocument);
 
             if (decryptedReport != null) {

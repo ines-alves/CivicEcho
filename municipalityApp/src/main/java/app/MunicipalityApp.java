@@ -1,3 +1,5 @@
+package app;
+
 import java.io.IOException;
 import java.net.Socket;
 import javax.net.ServerSocketFactory;
@@ -19,9 +21,12 @@ public class MunicipalityApp {
             System.out.println("Municipality server listening on port " + port + "...");
 
             try (Socket clientSocket = listener.accept()) {
-                System.out.println("Centralized party connected from: " + clientSocket.getInetAddress().getHostAddress());
+                System.out.println("New CentralizedParty connected from: " + clientSocket.getInetAddress().getHostAddress());
                 handleCentralizedPartyRequest(clientSocket);
-                System.out.println("Centralized party disconnected");
+                System.out.println("CentralizedParty disconnected from: " + clientSocket.getInetAddress().getHostAddress());
+            } catch (Exception e) {
+                System.err.println("Error handling centralized party request: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -79,16 +84,4 @@ public class MunicipalityApp {
         }
     }
 
-    public static void main(String args[]) throws IOException {
-        int port = 6001; // Same port for all municipalities since they run on different VMs
-
-        // Cada municipality tem o seu proprio certificado 
-        System.setProperty("javax.net.ssl.keyStore", "municipality.p12");
-        System.setProperty("javax.net.ssl.keyStorePassword", "changeme");
-        System.setProperty("javax.net.ssl.trustStore", "municipality-truststore.jks");
-        System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
-
-        System.out.println("Starting municipality server on port " + port + "...");
-        startMunicipalityServer(port);
-    }
 }
