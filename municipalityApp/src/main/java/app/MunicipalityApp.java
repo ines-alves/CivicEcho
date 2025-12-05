@@ -10,11 +10,14 @@ import javax.net.ssl.SSLSocketFactory;
 import processor.MessageProcessor;
 
 public class MunicipalityApp {
+    private static final String BIND_IP = "0.0.0.0"; // Talvez trocar para subnet
 
     public static void startMunicipalityServer(int port) throws IOException {
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
+        InetAddress bindAddress = InetAddress.getByName(BIND_IP);
 
-        try (SSLServerSocket listener = (SSLServerSocket) factory.createServerSocket(port)) {
+
+        try (SSLServerSocket listener = (SSLServerSocket) factory.createServerSocket(port, 50, bindAddress)) {
             listener.setNeedClientAuth(true);
             listener.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             listener.setEnabledProtocols(new String[] { "TLSv1.3" });
