@@ -87,9 +87,9 @@ public class CentralizedParty {
                     // Delete the temporary file after forwarding
                     deleteFile(tempFileName, tempFileNameResign);
 
-                    String response = "JSON message processed by centralized party | Municipality response: " + serverResponse;
+                    //String response = "JSON message processed by centralized party | Municipality response: " + serverResponse;
                     
-                    SocketUtils.writeToSocket(socket, response);
+                    SocketUtils.writeToSocket(socket, serverResponse);
                     System.out.printf("Sent response to client%n");
                     
                 } catch (IOException i) {
@@ -116,11 +116,12 @@ public class CentralizedParty {
         
         SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
         try (SSLSocket socket = (SSLSocket) factory.createSocket(municipality.getIpAddress(), municipality.getPort())) {
+            System.out.println("----CONNECTED TO MUNICIPALITY---");
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
             
-            SocketUtils.writeJsonFileToSocket(socket, fileName);
-            
+            SocketUtils.prepareAndWriteJsonFileToSocket(socket, fileName);
+            System.out.println("Sent JSON file name to municipality: " + fileName);
             String serverResponse = SocketUtils.readFromSocket(socket);
             System.out.println("Received response from municipality: " + serverResponse);
             
@@ -133,8 +134,8 @@ public class CentralizedParty {
     }
 
     private static void initMunicipalityMap() {
-        municipalityMap.put("Lisbon", new MunicipalityInfo("192.168.1.1", 6001));
-        municipalityMap.put("Porto", new MunicipalityInfo("127.0.0.1", 6002)); // Porto still localhost for now
+        municipalityMap.put("Lisbon", new MunicipalityInfo("192.168.1.1", 8091));
+        municipalityMap.put("Porto", new MunicipalityInfo("127.0.0.1", 8091)); // Porto still localhost for now
     }
 
     private static void deleteFile(String fileName, String fileNameResign) {

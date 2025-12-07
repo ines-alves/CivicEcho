@@ -16,7 +16,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 public class SocketUtils {
-    private static final int DEFAULT_BUFFER_SIZE = 2048;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     public static String readFromSocket(Socket socket) throws IOException {
         InputStream is = new BufferedInputStream(socket.getInputStream());
@@ -92,11 +92,27 @@ public class SocketUtils {
     public static void writeJsonFileToSocket(Socket socket, String jsonFileName) throws IOException {
         Gson gson = new Gson();
         String jsonMessage;
-        
+        System.out.println("before try:" + jsonFileName);
         try (FileReader reader = new FileReader(jsonFileName)) {
             jsonMessage = gson.fromJson(reader, String.class);
         }
-                
+        System.out.println("writing to socket: " + jsonMessage);        
+        writeToSocket(socket, jsonMessage);
+    }
+
+    public static void prepareAndWriteJsonFileToSocket(Socket socket, String jsonFileName) throws IOException {
+        Gson gson = new Gson();
+
+        // Read the JSON object (same structure produced by readSocketToJsonFile)
+        JsonObject jsonObject;
+        try (FileReader reader = new FileReader(jsonFileName)) {
+            jsonObject = gson.fromJson(reader, JsonObject.class);
+        }
+
+        // Convert the JsonObject to a compact JSON string for sending
+        String jsonMessage = gson.toJson(jsonObject);
+
+        // Now call your existing writeToSocket
         writeToSocket(socket, jsonMessage);
     }
 

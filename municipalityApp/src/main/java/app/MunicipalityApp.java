@@ -1,13 +1,17 @@
 package app;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
+
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+
 import processor.MessageProcessor;
+import sockets.SocketUtils;
 
 public class MunicipalityApp {
     private static final String BIND_IP = "0.0.0.0"; // Talvez trocar para subnet
@@ -23,6 +27,7 @@ public class MunicipalityApp {
             listener.setEnabledProtocols(new String[] { "TLSv1.3" });
             System.out.println("Municipality server listening on port " + port + "...");
 
+            while (true) {  // Add loop to accept multiple connections
             try (Socket clientSocket = listener.accept()) {
                 System.out.println("New CentralizedParty connected from: " + clientSocket.getInetAddress().getHostAddress());
                 handleCentralizedPartyRequest(clientSocket);
@@ -30,7 +35,9 @@ public class MunicipalityApp {
             } catch (Exception e) {
                 System.err.println("Error handling centralized party request: " + e.getMessage());
                 e.printStackTrace();
+                // Don't break - continue accepting new connections
             }
+        }
         }
     }
 
@@ -41,18 +48,18 @@ public class MunicipalityApp {
         while (!message.equals("Exit")) {
             try {
                 // Read secure document from centralized party
-                String secureDocument = sockets.SocketUtils.readFromSocket(clientSocket);
+                String secureDocument = SocketUtils.readFromSocket(clientSocket);
                 System.out.println("Received secure document from centralized party");
 
-                if (secureDocument.equals("Exit")) {
-                    break;
-                }
+                //if (secureDocument.equals("Exit")) {
+                //    break;
+                //}
 
-                processor.processSecureDocument(secureDocument);
+                //processor.processSecureDocument(secureDocument);
 
                 // Send response back to centralized party
                 String response = "Document processed successfully by municipality";
-                sockets.SocketUtils.writeToSocket(clientSocket, response);
+                SocketUtils.writeToSocket(clientSocket, "Document processed successfully by municipality");
                 System.out.println("Sent response to centralized party");
 
             } catch (IOException e) {

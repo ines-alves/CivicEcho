@@ -15,7 +15,7 @@ public class Main {
 
         System.out.println("Municipality App Started - " + municipality);
 
-        int port = 6001; // Same port for all municipalities since they run on different VMs
+        int port = 8091; // Same port for all municipalities since they run on different VMs
         System.out.println("Starting " + municipality + " municipality server on port " + port + "...");
         MunicipalityApp.startMunicipalityServer(port);
     }
