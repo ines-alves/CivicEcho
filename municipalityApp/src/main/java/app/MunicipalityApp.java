@@ -14,7 +14,7 @@ import processor.MessageProcessor;
 import sockets.SocketUtils;
 
 public class MunicipalityApp {
-    private static final String BIND_IP = "0.0.0.0"; // Talvez trocar para subnet
+    private static final String BIND_IP = "192.168.1.254"; // IP da centralized Party no VMNET3
 
     public static void startMunicipalityServer(int port) throws IOException {
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
@@ -43,29 +43,16 @@ public class MunicipalityApp {
 
     private static void handleCentralizedPartyRequest(Socket clientSocket) throws Exception {
         MessageProcessor processor = new MessageProcessor();
-        String message = "";
 
-        while (!message.equals("Exit")) {
-            try {
-                // Read secure document from centralized party
-                String secureDocument = SocketUtils.readFromSocket(clientSocket);
-                System.out.println("Received secure document from centralized party");
-
-                //if (secureDocument.equals("Exit")) {
-                //    break;
-                //}
-
-                //processor.processSecureDocument(secureDocument);
-
-                // Send response back to centralized party
-                String response = "Document processed successfully by municipality";
-                SocketUtils.writeToSocket(clientSocket, "Document processed successfully by municipality");
-                System.out.println("Sent response to centralized party");
-
-            } catch (IOException e) {
-                System.err.println("Communication error: " + e.getMessage());
-                break;
-            }
+        try {
+            // Read secure document from centralized party using utils
+            String secureDocument = SocketUtils.readSocketToJsonFile(clientSocket);
+            System.out.println("Received secure document from centralized party");
+            String processingResult = processor.processSecureDocument(secureDocument);
+            
+        } catch (IOException e) {
+            System.err.println("Communication error: " + e.getMessage());
+            throw e;
         }
     }
 
