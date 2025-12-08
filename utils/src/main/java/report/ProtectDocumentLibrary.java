@@ -40,10 +40,10 @@ public class ProtectDocumentLibrary {
 
                 case "protect":
                     if (args.length != 6) {
-                        System.err.println("Usage: protect <inputDocument> <outputDocument> <symmetricKey> <citizenPrivateKey> <municipalityPublicKey>");
+                        System.err.println("Usage: protect <inputDocument> <outputDocument> <symmetricKey> <municipalityPublicKey>");
                         return;
                     }
-                    library.protect(args[1], args[2], args[3], args[4], args[5], "CREATE");
+                    library.protect(args[1], args[2], args[3], args[4], "CREATE");
                     System.out.println("Document protected successfully!");
                     break;
                     
@@ -58,10 +58,10 @@ public class ProtectDocumentLibrary {
                     
                 case "unprotect":
                     if (args.length != 5) {
-                        System.err.println("Usage: unprotect <encryptedDocument> <decryptedDocument> <centralPublicKey> <municipalityPrivateKey>");
+                        System.err.println("Usage: unprotect <encryptedDocument> <decryptedDocument> <municipalityPrivateKey>");
                         return;
                     }
-                    library.unprotect(args[1], args[2], args[3], args[4]);
+                    library.unprotect(args[1], args[2], args[3]);
                     System.out.println("Document unprotected successfully!");
                     break;
                     
@@ -192,14 +192,10 @@ public class ProtectDocumentLibrary {
         return encryptedObject;
     }
 
-    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String citizenPrivKeyPath, String municipalityKeyPath, String operation) throws Exception {
+    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath, String operation) throws Exception {
         JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName,symmetricKeyPath, municipalityKeyPath, operation);
         
         byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
-
-        byte[] signature = sign(ciphertextBytes, citizenPrivKeyPath);
-
-        encryptedObject.addProperty("signature", Base64.getEncoder().encodeToString(signature));
 
         System.out.println(encryptedObject.toString());
 
@@ -252,17 +248,12 @@ public class ProtectDocumentLibrary {
         }
     }
 
-    public void unprotect(String encryptedDocumentName, String decryptedDocumentName, String centralizedPublicKeyPath, String privKeyPath) throws Exception {
+    public void unprotect(String encryptedDocumentName, String decryptedDocumentName, String privKeyPath) throws Exception {
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
             Gson gson = new Gson();
-            
-            // Read base64 encoded string from file
-            String jsonStringFromFile = gson.fromJson(fileReader, String.class);
-            byte[] decoded = Base64.getDecoder().decode(jsonStringFromFile);
-            String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
-            
+                        
             // Parse the encrypted JSON structure
-            JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+            JsonObject cipheredJson = gson.fromJson(fileReader, JsonObject.class);
             
             String cipheredKeyB64 = cipheredJson.get("key").getAsString();
             byte[] cipheredKey = Base64.getDecoder().decode(cipheredKeyB64);
@@ -279,14 +270,6 @@ public class ProtectDocumentLibrary {
             // Decode components
             byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
             byte[] iv = Base64.getDecoder().decode(ivB64);
-
-            String signatureB64 = cipheredJson.get("signature").getAsString();
-            byte[] signatureBytes = Base64.getDecoder().decode(signatureB64);
-            
-            boolean isVerified = verifySignature(cipheredText, signatureBytes, centralizedPublicKeyPath);
-                if (!isVerified) {
-                    throw new SecurityException("Signature verification failed!");
-                }
 
             // Initialize GCM cipher for decryption
             final int TAG_LENGTH = 128;

@@ -9,8 +9,8 @@ import sockets.SocketUtils;
 public class ReportService {
 
     private static final String SYMMETRIC_KEY_PATH = "../test_key.key";
-    private static final String CITIZEN_PRIV_KEY_PATH = "../alice.privkey";
-    private static final String MUNICIPALITY_PUB_KEY_PATH = "../bob.pubkey";
+    //private static final String CITIZEN_PRIV_KEY_PATH = "../alice.privkey";
+    private static final String MUNICIPALITY_PUB_KEY_PATH = "../certificates/municipalities/lisbon/lisbon.pubkey";
     private static final String TEMP_FILE_DIR = "temp_files/";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
 
@@ -21,7 +21,7 @@ public class ReportService {
             String fileName = TEMP_FILE_DIR + report.getReportId() + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + report.getReportId() + ".json";
 
-            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, CITIZEN_PRIV_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE");
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE");
 
             SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
             String response = SocketUtils.readFromSocket(socket);

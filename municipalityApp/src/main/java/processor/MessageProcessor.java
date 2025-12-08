@@ -11,8 +11,8 @@ public class MessageProcessor {
 
     // Certificate paths for municipality (Lisbon)
     private static final String DATABASE_ADRRESS = "192.168.2.254";
-    private static final String MUNICIPALITY_PRIVATE_KEY_PATH = "../certificates/municipalities/lisbon/lisbon.key";
-    private static final String CENTRALIZED_PARTY_PUBLIC_KEY_PATH = "../certificates/centralized-party/cp.crt";
+    private static final String MUNICIPALITY_PRIVATE_KEY_PATH = "../certificates/municipalities/lisbon/lisbon.privatekey";
+    private static final String CENTRALIZED_PARTY_PUBLIC_KEY_PATH = null;
 
     public MessageProcessor() {
         this.documentLibrary = new ProtectDocumentLibrary();
@@ -37,16 +37,14 @@ public class MessageProcessor {
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
 
-            // Use ProtectDocumentLibrary.unprotect() to decrypt the document
-            documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile,
-                                    CENTRALIZED_PARTY_PUBLIC_KEY_PATH, MUNICIPALITY_PRIVATE_KEY_PATH);
+            documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, MUNICIPALITY_PRIVATE_KEY_PATH);
 
             System.out.println("Document successfully decrypted using utils methods");
             System.out.println("Decrypted content: " + tempDecryptedFile);
 
             // Forward to database
-            String result = municipalityApp.connectToDatabase(DATABASE_ADRRESS, 8080, tempDecryptedFile);
-
+            //String result = municipalityApp.connectToDatabase(DATABASE_ADRRESS, 8080, tempDecryptedFile);
+            String result = "Simulated database response"; // Placeholder for actual database response
             return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
 
         } finally {

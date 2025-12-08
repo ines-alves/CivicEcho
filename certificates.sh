@@ -43,14 +43,30 @@ echo "--- Step 2: Create Municipalities (signed by CP as CA) ---"
 # Lisbon
 echo "Creating Lisbon municipality..."
 cd municipalities/lisbon
+
+# Generate RSA private key (PEM temporarily)
 openssl genrsa -out lisbon.key 2048
+
+# Convert private key to DER PKCS#8 (Java compatible)
+openssl pkcs8 -topk8 -nocrypt -in lisbon.key -outform DER -out lisbon.privatekey
+
+# Generate public key in DER X.509 format (Java compatible)
+openssl rsa -in lisbon.key -pubout -outform DER -out lisbon.pubkey
+
+# Generate CSR
 openssl req -new -key lisbon.key -out lisbon.csr -subj "/CN=municipality-lisbon"
+
+# Sign certificate
 openssl x509 -req -days 365 -in lisbon.csr -CA ../../centralized-party/cp.crt \
   -CAkey ../../centralized-party/cp.key -CAserial ../../centralized-party/cp.srl -out lisbon.crt
-echo "Created: lisbon.key, lisbon.csr, lisbon.crt"
 
+echo "Created: lisbon.key (PEM), lisbon.privatekey (DER), lisbon.pubkey (DER), lisbon.csr, lisbon.crt"
+
+# Create PKCS#12 bundle (for browsers / tools)
 openssl pkcs12 -export -in lisbon.crt -inkey lisbon.key -out lisbon.p12 -password pass:changeme
+
 echo "Created: lisbon.p12"
+
 
 # Lisbon truststore (trusts CP as CA)
 keytool -import -trustcacerts -file ../../centralized-party/cp.crt -alias cp-ca \
