@@ -1,11 +1,13 @@
 package processor;
 
+import app.MunicipalityApp;
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
 import java.io.IOException;
 
 public class MessageProcessor {
     private final ProtectDocumentLibrary documentLibrary;
+    private final MunicipalityApp municipalityApp;
 
     // Certificate paths for municipality (Lisbon)
     private static final String DATABASE_ADRRESS = "192.168.2.254";
@@ -14,13 +16,14 @@ public class MessageProcessor {
 
     public MessageProcessor() {
         this.documentLibrary = new ProtectDocumentLibrary();
+        this.municipalityApp = new MunicipalityApp();
     }
 
     /**
      * Process a secure document received from CentralizedParty
      * Uses actual utils methods: SocketUtils and ProtectDocumentLibrary
      */
-    public String processSecureDocument(String secureDocumentJson) {
+    public String processSecureDocument(String secureDocumentJson) throws Exception {
         // Create temporary files for processing
         String tempDecryptedFile = "temp_decrypted_" + System.currentTimeMillis() + ".json";
 
@@ -28,6 +31,8 @@ public class MessageProcessor {
             // Use SocketUtils to get location and operation from the file
             String location = SocketUtils.getLocationFromJsonFile(secureDocumentJson);
             String operation = SocketUtils.getOperationFromJsonFile(secureDocumentJson);
+
+
 
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
@@ -40,7 +45,7 @@ public class MessageProcessor {
             System.out.println("Decrypted content: " + tempDecryptedFile);
 
             // Forward to database
-            String result = connectToDatabase(DATABASE_ADRRESS, 8090, tempDecryptedFile);
+            String result = municipalityApp.connectToDatabase(DATABASE_ADRRESS, 8080, tempDecryptedFile);
 
             return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
 

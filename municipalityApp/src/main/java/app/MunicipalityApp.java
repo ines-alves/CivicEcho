@@ -14,7 +14,7 @@ import processor.MessageProcessor;
 import sockets.SocketUtils;
 
 public class MunicipalityApp {
-    private static final String BIND_IP = "192.168.1.254"; // IP da centralized Party no VMNET3
+    private static final String BIND_IP = "0.0.0.0"; // IP da centralized Party no VMNET3
 
     public static void startMunicipalityServer(int port) throws IOException {
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
@@ -43,13 +43,17 @@ public class MunicipalityApp {
 
     private static void handleCentralizedPartyRequest(Socket clientSocket) throws Exception {
         MessageProcessor processor = new MessageProcessor();
+        String tempProcessedFile = "temp_processed_" + System.currentTimeMillis() + ".json";
 
         try {
+
             // Read secure document from centralized party using utils
-            String secureDocument = SocketUtils.readSocketToJsonFile(clientSocket);
+            SocketUtils.readSocketToJsonFile(clientSocket,tempProcessedFile);
             System.out.println("Received secure document from centralized party");
-            String processingResult = processor.processSecureDocument(secureDocument);
-            
+            String processingResult = processor.processSecureDocument(tempProcessedFile);
+            SocketUtils.writeToSocket(clientSocket, processingResult);
+            System.out.printf("Sent response to client%n");
+
         } catch (IOException e) {
             System.err.println("Communication error: " + e.getMessage());
             throw e;

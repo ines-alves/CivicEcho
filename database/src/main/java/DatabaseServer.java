@@ -11,7 +11,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 
 public class DatabaseServer {
     private static final int PORT = 8080;
-    private static final String BIND_IP = "192.168.2.4";
+    private static final String BIND_IP = "0.0.0.0";
     private static final int THREAD_POOL_SIZE = 10;
     private static ExecutorService threadPool;
 
@@ -49,9 +49,9 @@ public class DatabaseServer {
 
     public static void main(String[] args) {
         // Set SSL properties for database server
-        System.setProperty("javax.net.ssl.keyStore", "database.p12");
+        System.setProperty("javax.net.ssl.keyStore", "../certificates/database/db.p12");
         System.setProperty("javax.net.ssl.keyStorePassword", "changeme");
-        System.setProperty("javax.net.ssl.trustStore", "database-truststore.jks");
+        System.setProperty("javax.net.ssl.trustStore", "../certificates/database/db-truststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
 
         System.out.println("Database Server starting on port " + PORT);

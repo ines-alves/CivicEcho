@@ -111,9 +111,10 @@ public class SocketUtils {
 
         // Convert the JsonObject to a compact JSON string for sending
         String jsonMessage = gson.toJson(jsonObject);
+        String base64Encoded = Base64.getEncoder().encodeToString(jsonMessage.getBytes(StandardCharsets.UTF_8));
 
         // Now call your existing writeToSocket
-        writeToSocket(socket, jsonMessage);
+        writeToSocket(socket, base64Encoded);
     }
 
 }
