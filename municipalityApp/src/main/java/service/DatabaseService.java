@@ -5,19 +5,18 @@ import com.google.gson.JsonObject;
 import java.sql.*;
 
 public class DatabaseService {
-    private static final String DB_URL = "jdbc:postgresql://localhost:5432/municipality?currentSchema=public";
+    private static final String DB_URL = "jdbc:postgresql://192.168.2.100:5432/municipality?sslmode=verify-ca&sslrootcert=../certificates/centralized-party/cp.crt";
     private static final String DB_USERNAME = "municipality_user";
     private static final String DB_PASSWORD = "municipality_pass";
 
-    public String createReport(JsonObject request) {
+    public String createReport(JsonObject report) {
         System.out.println("=== CREATE REPORT DEBUG ===");
         String sql = "INSERT INTO reports (report_id, location, report_data) VALUES (?, ?, ?::jsonb)";
 
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            JsonObject report = request.getAsJsonObject("report");
-            String location = request.get("location").getAsString();
+            String location = report.get("location").getAsString();
             String reportId = report.get("report_id").getAsString();
 
             System.out.println("Report ID: " + reportId);
@@ -40,14 +39,13 @@ public class DatabaseService {
         }
     }
 
-    public String readReport(JsonObject request) {
+    public String readReport(String reportId) {
         System.out.println("=== READ REPORT DEBUG ===");
         String sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE report_id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            String reportId = request.get("reportId").getAsString();
             System.out.println("Searching for report ID: " + reportId);
 
             stmt.setString(1, reportId);

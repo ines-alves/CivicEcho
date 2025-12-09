@@ -60,29 +60,4 @@ public class MunicipalityApp {
         }
     }
 
-    public static String connectToDatabase(String host, int port, String request) throws IOException {
-        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-
-        try (SSLSocket socket = (SSLSocket) factory.createSocket(host, port)) {
-            socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
-            socket.setEnabledProtocols(new String[] { "TLSv1.3" });
-
-            System.out.println("Connected to database at " + host + ":" + port);
-
-            // Send request to database
-            sockets.SocketUtils.writeToSocket(socket, request);
-            System.out.println("Sent request to database: " + request);
-
-            // Read response from database
-            String response = sockets.SocketUtils.readFromSocket(socket);
-            System.out.println("Received response from database: " + response);
-
-            return response;
-
-        } catch (IOException e) {
-            System.err.println("Error connecting to database: " + e.getMessage());
-            throw e;
-        }
-    }
-
 }

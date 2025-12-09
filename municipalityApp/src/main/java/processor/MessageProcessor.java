@@ -1,22 +1,22 @@
 package processor;
 
-import app.MunicipalityApp;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import report.ProtectDocumentLibrary;
+import service.DatabaseService;
 import sockets.SocketUtils;
-import java.io.IOException;
+import java.io.FileReader;
 
 public class MessageProcessor {
     private final ProtectDocumentLibrary documentLibrary;
-    private final MunicipalityApp municipalityApp;
+    private final DatabaseService databaseService;
 
     // Certificate paths for municipality (Lisbon)
-    private static final String DATABASE_ADRRESS = "192.168.2.254";
     private static final String MUNICIPALITY_PRIVATE_KEY_PATH = "../certificates/municipalities/lisbon/lisbon.privatekey";
-    private static final String CENTRALIZED_PARTY_PUBLIC_KEY_PATH = null;
 
     public MessageProcessor() {
         this.documentLibrary = new ProtectDocumentLibrary();
-        this.municipalityApp = new MunicipalityApp();
+        this.databaseService = new DatabaseService();
     }
 
     /**
@@ -32,8 +32,6 @@ public class MessageProcessor {
             String location = SocketUtils.getLocationFromJsonFile(secureDocumentJson);
             String operation = SocketUtils.getOperationFromJsonFile(secureDocumentJson);
 
-
-
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
 
@@ -42,16 +40,30 @@ public class MessageProcessor {
             System.out.println("Document successfully decrypted using utils methods");
             System.out.println("Decrypted content: " + tempDecryptedFile);
 
+            // Read the decrypted JSON file
+            Gson gson = new Gson();
+            JsonObject decryptedJson;
+            try (FileReader reader = new FileReader(tempDecryptedFile)) {
+                decryptedJson = gson.fromJson(reader, JsonObject.class);
+            }
+
             // Forward to database
-            //String result = municipalityApp.connectToDatabase(DATABASE_ADRRESS, 8080, tempDecryptedFile);
-            String result = "Simulated database response"; // Placeholder for actual database response
+            String result;
+            if ("CREATE".equalsIgnoreCase(operation)) {
+                result = databaseService.createReport(decryptedJson);
+            } else if ("READ".equalsIgnoreCase(operation)) {
+                String reportId = decryptedJson.get("report_id").getAsString();
+                result = databaseService.readReport(reportId);
+            } else {
+                result = "Unknown operation: " + operation;
+            }
+
             return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
 
         } finally {
             // Clean up temporary files
             cleanupTempFiles(tempDecryptedFile);
         }
-
     }
 
     /**

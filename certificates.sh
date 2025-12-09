@@ -7,7 +7,7 @@ echo "=== Creating TLS Certificates ==="
 echo "Note: Centralized Party acts as CA for clients"
 
 # Create directory structure
-mkdir -p certificates/{centralized-party,municipalities/{lisbon,porto},clients/citizen1}
+mkdir -p certificates/{centralized-party,municipalities/{lisbon,porto},clients/citizen1,database}
 cd certificates
 
 echo ""
@@ -93,7 +93,34 @@ echo "Created: porto-truststore.jks (trusts CP as CA)"
 cd ../..
 
 echo ""
-echo "--- Step 3: Create Client (signed by CP as CA) ---"
+echo "--- Step 3: Create Database (signed by CP as CA) ---"
+cd database
+
+# Generate DB key
+openssl genrsa -out db.key 2048
+echo "Created: db.key"
+
+# Create CSR
+openssl req -new -key db.key -out db.csr -subj "/CN=database"
+echo "Created: db.csr"
+
+# Sign with CP as CA
+openssl x509 -req -days 365 -in db.csr -CA ../centralized-party/cp.crt \
+  -CAkey ../centralized-party/cp.key -CAserial ../centralized-party/cp.srl -out db.crt
+echo "Created: db.crt (signed by CP)"
+
+# Create PKCS12
+openssl pkcs12 -export -in db.crt -inkey db.key -out db.p12 -password pass:changeme
+echo "Created: db.p12"
+
+# DB truststore (trusts CP as CA)
+keytool -import -trustcacerts -file ../centralized-party/cp.crt -alias cp-ca \
+  -keystore db-truststore.jks -storepass changeme -noprompt
+echo "Created: db-truststore.jks (trusts CP as CA)"
+cd ..
+
+echo ""
+echo "--- Step 4: Create Client (signed by CP as CA) ---"
 cd clients/citizen1
 
 # Generate client key
@@ -145,7 +172,8 @@ echo "Certificate Hierarchy:"
 echo "  CP (self-signed) → Acts as CA"
 echo "    ├── citizen1.crt (signed by CP)"
 echo "    ├── lisbon.crt (signed by CP)"
-echo "    └── porto.crt (signed by CP)"
+echo "    ├── porto.crt (signed by CP)"
+echo "    └── db.crt (signed by CP)"
 echo ""
 echo "Files created:"
 echo "Centralized Party (acts as CA):"
@@ -165,6 +193,12 @@ echo "  certificates/municipalities/porto/porto.key"
 echo "  certificates/municipalities/porto/porto.crt"
 echo "  certificates/municipalities/porto/porto.p12"
 echo "  certificates/municipalities/porto/porto-truststore.jks (trusts: cp.crt)"
+echo ""
+echo "Database:"
+echo "  certificates/database/db.key"
+echo "  certificates/database/db.crt"
+echo "  certificates/database/db.p12"
+echo "  certificates/database/db-truststore.jks (trusts: cp.crt)"
 echo ""
 echo "Client Citizen1:"
 echo "  certificates/clients/citizen1/citizen1.key"
