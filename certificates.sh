@@ -113,9 +113,10 @@ echo "Created: db.crt (signed by CP)"
 openssl pkcs12 -export -in db.crt -inkey db.key -out db.p12 -password pass:changeme
 echo "Created: db.p12"
 
-# DB truststore (trusts CP as CA)
-keytool -import -trustcacerts -file ../centralized-party/cp.crt -alias cp-ca \
-  -keystore db-truststore.jks -storepass changeme -noprompt
+# DB truststore (trusts DB as CA)
+keytool -import -trustcacerts -file ../municipalities/lisbon/lisbon.crt -alias lisbon \
+  -keystore ../../database/db-truststore.jks -storepass changeme -noprompt
+
 echo "Created: db-truststore.jks (trusts CP as CA)"
 cd ..
 

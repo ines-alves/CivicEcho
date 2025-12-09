@@ -81,6 +81,7 @@ CERT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../certificates" && pwd)
 sed -i "s/#ssl = off/ssl = on/g" $PG_CONF
 sed -i "s|#ssl_cert_file = 'server.crt'|ssl_cert_file = '$CERT_DIR/database/db.crt'|g" $PG_CONF
 sed -i "s|#ssl_key_file = 'server.key'|ssl_key_file = '$CERT_DIR/database/db.key'|g" $PG_CONF
+sed -i "s|#ssl_ca_file = ''|ssl_ca_file = '$CERT_DIR/centralized-party/cp.crt'|g" $PG_CONF
 
 echo "hostssl all all 0.0.0.0/0 md5" | tee -a $PG_HBA
 
