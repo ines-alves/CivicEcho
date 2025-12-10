@@ -1,6 +1,7 @@
 package service;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
@@ -109,29 +110,40 @@ public class EnrollmentHandler {
         return filename;
     }
 
-    private String signCsrWithScript(String clientId, String csrFile) {
+   private String signCsrWithScript(String clientId, String csrFile) {
         try {
             String tempDir = System.getProperty("java.io.tmpdir");
             String outputFile = tempDir + "/cert-" + clientId + "-" + 
                 System.currentTimeMillis() + ".crt";
             
+            // Build simple command (2 parameters only)
             ProcessBuilder pb = new ProcessBuilder(
                 "bash",
                 "../scripts/sign-certificate.sh",
                 csrFile,
-                outputFile,
-                clientId
+                outputFile
             );
             
+            pb.directory(new File(".")); 
+            
+            // Run script
             Process process = pb.start();
             
             // Capture output
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()));
+            BufferedReader errorReader = new BufferedReader(
+                new InputStreamReader(process.getErrorStream()));
+            
             StringBuilder output = new StringBuilder();
+            StringBuilder errorOutput = new StringBuilder();
+            
             String line;
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
+            }
+            while ((line = errorReader.readLine()) != null) {
+                errorOutput.append(line).append("\n");
             }
             
             int exitCode = process.waitFor();
@@ -140,7 +152,9 @@ public class EnrollmentHandler {
                 System.out.println("[Enrollment] Script output: " + output.toString());
                 return outputFile;
             } else {
-                System.err.println("[Enrollment] Script failed with code " + exitCode + ": " + output.toString());
+                System.err.println("[Enrollment] Script failed with code " + exitCode);
+                System.err.println("Output: " + output.toString());
+                System.err.println("Error: " + errorOutput.toString());
                 return null;
             }
             
