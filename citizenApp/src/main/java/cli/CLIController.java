@@ -1,6 +1,7 @@
 package cli;
 
 import controller.ReportController;
+import controler.LoginController;
 
 import java.util.Scanner;
 import java.io.IOException;
@@ -13,7 +14,56 @@ public class CLIController {
 
     private final Scanner scanner = new Scanner(System.in);
     private final ReportController reportController = new ReportController();
+    private final LoginController loginController = new LoginController();
 
+    public void login(String host, int port) {
+        SocketFactory factory = SSLSocketFactory.getDefault();
+        try (SSLSocket socket = (SSLSocket) factory.createSocket(host, port)) {
+            
+            socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
+            socket.setEnabledProtocols(new String[] { "TLSv1.3" });
+            
+            System.out.println("\n===========================");
+            System.out.println("=== CvicEcho CITIZEN APP ===");
+            System.out.println("===========================\n");
+
+            System.out.println("Choose an operation:");
+            System.out.println("1 - Login");
+            System.out.println("0 - Exit");
+
+            System.out.print("\nOption: ");
+            String option = scanner.nextLine().trim();
+
+            switch (option) {
+                case "1":
+                    boolean result = loginController.login(scanner, socket);
+                    if (!result) {
+                        System.out.println("Terminating application.");
+                        return;
+                    }
+                    break;
+                case "0":
+                    System.out.println("Goodbye!");
+                    try {
+                        scanner.close();
+                        socket.close();
+                    } catch (IOException i) {
+                        System.out.println(i);
+                        return;
+                    }
+                    return;
+                default:
+                    System.out.println("Invalid option.");
+            }
+        
+            // Once the user is authenticated, start the main loop
+            start("192.168.0.10", 8090);
+
+        } catch (IOException e) {
+            System.out.println("Connection error: " + e.getMessage());
+        }
+    }
+    
     public void start(String host, int port) throws IOException {
         SocketFactory factory = SSLSocketFactory.getDefault();
         try (SSLSocket socket = (SSLSocket) factory.createSocket(host, port)) {
@@ -23,13 +73,13 @@ public class CLIController {
 
 
             while (true) {
-                System.out.println("\n=== REPORT CITIZEN APP ===");
+                System.out.println("\n=== REPORT CITIZEN APP ===\n");
                 System.out.println("Choose an operation:");
                 System.out.println("1 - Create Report");
                 System.out.println("2 - Read Report ");
                 System.out.println("0 - Exit");
 
-                System.out.print("Option: ");
+                System.out.print("\nOption: ");
                 String option = scanner.nextLine().trim();
 
                 switch (option) {
@@ -53,6 +103,8 @@ public class CLIController {
                         System.out.println("Invalid option.");
                 }
             }
+        } catch (IOException e) {
+            System.out.println("Connection error: " + e.getMessage());
         }
     }
 }

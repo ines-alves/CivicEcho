@@ -10,6 +10,6 @@ public class Main {
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
 
         CLIController cli = new CLIController();
-        cli.start("192.168.0.10", 8090);
+        cli.login("192.168.0.10", 8090); //fix the ip and port
     }
 }
