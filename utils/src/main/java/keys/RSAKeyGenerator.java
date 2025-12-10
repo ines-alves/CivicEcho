@@ -29,37 +29,29 @@ public class RSAKeyGenerator {
         final String pubkeyPath = args[2];
 
         if (mode.toLowerCase().startsWith("w")) {
-            System.out.println("Generate and save keys");
             write(pubkeyPath, privkeyPath);
         } else {
-            System.out.println("Load keys");
             read(pubkeyPath, privkeyPath);
         }
 
-        System.out.println("Done.");
     }
 
     public static void write(String publicKeyPath, String privateKeyPath) throws GeneralSecurityException, IOException {
         // get an AES private key
-        System.out.println("Generating RSA key ...");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(1024);
         KeyPair keys = keyGen.generateKeyPair();
 
-        System.out.println("Private Key:");
         PrivateKey privKey = keys.getPrivate();
         byte[] privKeyEncoded = privKey.getEncoded();
-        System.out.println(printHexBinary(privKeyEncoded));
-        System.out.println("Public Key:");
+
         PublicKey pubKey = keys.getPublic();
         byte[] pubKeyEncoded = pubKey.getEncoded();
-        System.out.println(printHexBinary(pubKeyEncoded));
 
-        System.out.println("Writing Private key to '" + privateKeyPath + "' ...");
         FileOutputStream privFos = new FileOutputStream(privateKeyPath);
         privFos.write(privKeyEncoded);
         privFos.close();
-        System.out.println("Writing Public key to '" + publicKeyPath + "' ...");
+
         FileOutputStream pubFos = new FileOutputStream(publicKeyPath);
         pubFos.write(pubKeyEncoded);
         pubFos.close();
@@ -67,7 +59,7 @@ public class RSAKeyGenerator {
 
     public static KeyPair read(String publicKeyPath, String privateKeyPath)
             throws GeneralSecurityException, IOException {
-        System.out.println("Reading public key from file " + publicKeyPath + " ...");
+
         FileInputStream pubFis = new FileInputStream(publicKeyPath);
         byte[] pubEncoded = new byte[pubFis.available()];
         pubFis.read(pubEncoded);
@@ -77,7 +69,6 @@ public class RSAKeyGenerator {
         KeyFactory keyFacPub = KeyFactory.getInstance("RSA");
         PublicKey pub = keyFacPub.generatePublic(pubSpec);
 
-        System.out.println("Reading private key from file " + privateKeyPath + " ...");
         FileInputStream privFis = new FileInputStream(privateKeyPath);
         byte[] privEncoded = new byte[privFis.available()];
         privFis.read(privEncoded);
@@ -93,7 +84,7 @@ public class RSAKeyGenerator {
 
     public static PublicKey readPublicKey(String publicKeyPath)
             throws GeneralSecurityException, IOException {
-        System.out.println("Reading public key from file " + publicKeyPath + " ...");
+
         FileInputStream pubFis = new FileInputStream(publicKeyPath);
         byte[] pubEncoded = new byte[pubFis.available()];
         pubFis.read(pubEncoded);
@@ -108,7 +99,7 @@ public class RSAKeyGenerator {
 
     public static PrivateKey readPrivateKey(String privateKeyPath)
             throws GeneralSecurityException, IOException {
-        System.out.println("Reading private key from file " + privateKeyPath + " ...");
+
         FileInputStream privFis = new FileInputStream(privateKeyPath);
         byte[] privEncoded = new byte[privFis.available()];
         privFis.read(privEncoded);

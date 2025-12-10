@@ -18,7 +18,11 @@ public class ReportBuilder {
     }
 
     public boolean buildReportInteractively() { // returns true if the report was created successfully
-        System.out.println("\n--- CREATE REPORT ---");
+        System.out.println();
+        System.out.println("┌─────────────────────────────────┐");
+        System.out.println("│          CREATE REPORT          │");
+        System.out.println("└─────────────────────────────────┘");
+        System.out.println();
 
         report.setReportId(IdGenerator.generateId("echo_"));
         report.setTimestamp(Instant.now().toString());
@@ -30,13 +34,39 @@ public class ReportBuilder {
         editDescription();
 
         while (true) {
-            System.out.println("\n--- FINAL PREVIEW ---");
-            System.out.println(report.toPrettyJson());
+            Report.Coordinates coords = report.getCoordinates();
+            System.out.println();
+            System.out.println("┌──────────────────────────────────────────────┐");
+            System.out.println("│                 FINAL PREVIEW                │");
+            System.out.println("├──────────────────────────────────────────────┤");
+            System.out.printf("│ Report ID   ▸ %-30s │%n", report.getReportId());
+            System.out.printf("│ Timestamp   ▸ %-30s │%n", report.getTimestamp()); 
+            System.out.printf("│ Category    ▸ %-30s │%n", report.getCategory());
+            System.out.printf("│ Location    ▸ %-30s │%n", report.getLocation());
+            System.out.printf("│ Latitude    ▸ %-30s │%n", coords.latitude);
+            System.out.printf("│ Longitude   ▸ %-30s │%n", coords.longitude);
+            
+            String description = report.getDescription();
+            int lineLength = 30; // remaining width after label
+            int start = 0;
 
-            System.out.println("\noptions:");
-            System.out.println("s - Save report");
-            System.out.println("e - Edit report");
-            System.out.println("d - Delete / Cancel");
+            // First line with label
+            int end = Math.min(description.length(), lineLength);
+            System.out.printf("│ %-11s ▸ %-30s │%n", "Description", description.substring(start, end));
+            start = end;
+
+            // Remaining lines indented
+            while (start < description.length()) {
+                end = Math.min(start + lineLength, description.length());
+                System.out.printf("│ %-11s   %-30s │%n", "", description.substring(start, end));
+                start = end;
+            }
+            
+            System.out.println("├──────────────────────────────────────────────┤");
+            System.out.println("│ s ▸ Save Report                              │");
+            System.out.println("│ e ▸ Edit Report                              │");
+            System.out.println("│ d ▸ Delete / Cancel                          │");
+            System.out.println("└──────────────────────────────────────────────┘");
 
             System.out.print("Choose: ");
             String op = scanner.nextLine().trim().toLowerCase();
@@ -62,14 +92,18 @@ public class ReportBuilder {
 
     private void editReport() {
         while (true) {
-            System.out.println("\n--- EDIT REPORT ---");
-            System.out.println("1 - Edit category");
-            System.out.println("2 - Edit location");
-            System.out.println("3 - Edit coordinates");
-            System.out.println("4 - Edit description");
-            System.out.println("0 - Done editing");
-
+            System.out.println();
+            System.out.println("┌─────────────────────────────────┐");
+            System.out.println("│           EDIT REPORT           │");
+            System.out.println("├─────────────────────────────────┤");
+            System.out.println("│ 1 ▸ Edit Category               │");
+            System.out.println("│ 2 ▸ Edit Location               │");
+            System.out.println("│ 3 ▸ Edit Coordinates            │");
+            System.out.println("│ 4 ▸ Edit Description            │");
+            System.out.println("│ 0 ▸ Done Editing                │");
+            System.out.println("└─────────────────────────────────┘");
             System.out.print("Option: ");
+
             String opt = scanner.nextLine().trim();
 
             switch (opt) {

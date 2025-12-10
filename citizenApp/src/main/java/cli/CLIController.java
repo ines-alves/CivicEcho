@@ -1,7 +1,7 @@
 package cli;
 
 import controller.ReportController;
-import controler.LoginController;
+import controller.LoginController;
 
 import java.util.Scanner;
 import java.io.IOException;
@@ -23,15 +23,14 @@ public class CLIController {
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
             
-            System.out.println("\n===========================");
-            System.out.println("=== CvicEcho CITIZEN APP ===");
-            System.out.println("===========================\n");
-
-            System.out.println("Choose an operation:");
-            System.out.println("1 - Login");
-            System.out.println("0 - Exit");
-
-            System.out.print("\nOption: ");
+            System.out.println();
+            System.out.println("┌─────────────────────────────────┐");
+            System.out.println("│       CvicEcho CITIZEN APP      │");
+            System.out.println("├─────────────────────────────────┤");
+            System.out.println("│ 1 ▸ Login                       │");
+            System.out.println("│ 0 ▸ Exit                        │");
+            System.out.println("└─────────────────────────────────┘");
+            System.out.print("Option: ");
             String option = scanner.nextLine().trim();
 
             switch (option) {
@@ -71,15 +70,17 @@ public class CLIController {
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
 
-
             while (true) {
-                System.out.println("\n=== REPORT CITIZEN APP ===\n");
-                System.out.println("Choose an operation:");
-                System.out.println("1 - Create Report");
-                System.out.println("2 - Read Report ");
-                System.out.println("0 - Exit");
-
-                System.out.print("\nOption: ");
+                System.out.println();
+                System.out.println("┌─────────────────────────────────┐");
+                System.out.println("│       CvicEcho CITIZEN APP      │");
+                System.out.println("│             REPORT              │");
+                System.out.println("├─────────────────────────────────┤");
+                System.out.println("│ 1 ▸ Create Report               │");
+                System.out.println("│ 2 ▸ Read Report                 │");
+                System.out.println("│ 0 ▸ Exit                        │");
+                System.out.println("└─────────────────────────────────┘");
+                System.out.print("Option: ");
                 String option = scanner.nextLine().trim();
 
                 switch (option) {

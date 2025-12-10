@@ -198,8 +198,6 @@ public class ProtectDocumentLibrary {
         
         byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
 
-        System.out.println(encryptedObject.toString());
-
         // Encode the entire JSON as base64 string
         String finalJsonString = new Gson().toJson(encryptedObject);
         String base64Encoded = Base64.getEncoder().encodeToString(finalJsonString.getBytes(StandardCharsets.UTF_8));

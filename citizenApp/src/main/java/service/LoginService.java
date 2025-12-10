@@ -4,12 +4,15 @@ import javax.net.ssl.SSLSocket;
 
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 
 public class LoginService {
     
-
     private static final String CITIZEN_PRIV_KEY_PATH = "../alice.privkey"; //FIXME: change to the correct path
-    private static final String CITIZEN_CERTIFICATE_PATH = "../alice.csr";
+    private static final String CITIZEN_CERTIFICATE_PATH = "../alice.csr";  //FIXME: change to the correct path
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
         
     public static boolean sendLogin(SSLSocket socket, String citizenID) {
@@ -25,7 +28,7 @@ public class LoginService {
             
             String loginMessage = citizenID + "|" + certificateBase64 + "|" + signatureBase64;
 
-            System.out.println("\n loginMessage: " + loginMessage + "\n-----"); //DEBUG
+            System.out.println("\n---- loginMessage: " + loginMessage + "\n-----"); //DEBUG
 
             SocketUtils.writeToSocket(socket, loginMessage);
             
@@ -37,6 +40,7 @@ public class LoginService {
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 }

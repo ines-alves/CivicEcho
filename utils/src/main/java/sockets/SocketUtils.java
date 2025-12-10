@@ -92,11 +92,11 @@ public class SocketUtils {
     public static void writeJsonFileToSocket(Socket socket, String jsonFileName) throws IOException {
         Gson gson = new Gson();
         String jsonMessage;
-        System.out.println("before try:" + jsonFileName);
+        
         try (FileReader reader = new FileReader(jsonFileName)) {
             jsonMessage = gson.fromJson(reader, String.class);
         }
-        System.out.println("writing to socket: " + jsonMessage);        
+       
         writeToSocket(socket, jsonMessage);
     }
 

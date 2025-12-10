@@ -8,8 +8,11 @@ import javax.net.ssl.SSLSocket;
 public class LoginController {
     public boolean login(Scanner scanner, SSLSocket socket) {
         while (true) {
-            System.out.println("Enter your citizenID or 'exit' to quit");
-            System.out.print("- ");
+            System.out.println();
+            System.out.println("┌─────────────────────────────────┐");
+            System.out.println("│ Enter your Citizen ID or 'exit' │");
+            System.out.println("└─────────────────────────────────┘");
+            System.out.print("▸ ");
             String citizenID = scanner.nextLine().trim();
             
             if (citizenID.equalsIgnoreCase("exit")) {
@@ -28,7 +31,7 @@ public class LoginController {
                 System.out.println("\nLogin successful!");
                 return true;
             } else {
-                System.out.println("\nLogin failed. Please try again.");
+                System.out.println("\nLogin failed, please try again.");
             }
         }
     }
