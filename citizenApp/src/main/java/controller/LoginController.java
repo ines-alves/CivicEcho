@@ -32,11 +32,11 @@ public class LoginController {
                 System.out.println("\nLogin successful!");
                 return true;
             } else {
+                attempts--;
                 if (attempts == 0) {
                     System.out.println("\nMaximum login attempts reached.");
                     return false;
                 }
-                attempts--;
                 System.out.println("\nLogin failed, please try again.");
             }
         }
