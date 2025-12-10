@@ -22,39 +22,39 @@ public class CLIController {
             
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
-            
-            System.out.println();
-            System.out.println("┌─────────────────────────────────┐");
-            System.out.println("│       CvicEcho CITIZEN APP      │");
-            System.out.println("├─────────────────────────────────┤");
-            System.out.println("│ 1 ▸ Login                       │");
-            System.out.println("│ 0 ▸ Exit                        │");
-            System.out.println("└─────────────────────────────────┘");
-            System.out.print("Option: ");
-            String option = scanner.nextLine().trim();
+            while (true) {
+                System.out.println();
+                System.out.println("┌─────────────────────────────────┐");
+                System.out.println("│       CvicEcho CITIZEN APP      │");
+                System.out.println("├─────────────────────────────────┤");
+                System.out.println("│ 1 ▸ Login                       │");
+                System.out.println("│ 0 ▸ Exit                        │");
+                System.out.println("└─────────────────────────────────┘");
+                System.out.print("Option: ");
+                String option = scanner.nextLine().trim();
 
-            switch (option) {
-                case "1":
-                    boolean result = loginController.login(scanner, socket);
-                    if (!result) {
-                        System.out.println("Terminating application.");
+                switch (option) {
+                    case "1":
+                        boolean result = loginController.login(scanner, socket);
+                        if (!result) {
+                            System.out.println("Terminating application.");
+                            return;
+                        }
+                        break;
+                    case "0":
+                        System.out.println("Goodbye!");
+                        try {
+                            scanner.close();
+                            socket.close();
+                        } catch (IOException i) {
+                            System.out.println(i);
+                            return;
+                        }
                         return;
-                    }
-                    break;
-                case "0":
-                    System.out.println("Goodbye!");
-                    try {
-                        scanner.close();
-                        socket.close();
-                    } catch (IOException i) {
-                        System.out.println(i);
-                        return;
-                    }
-                    return;
-                default:
-                    System.out.println("Invalid option.");
+                    default:
+                        System.out.println("Invalid option.");
+                }
             }
-        
             // Once the user is authenticated, start the main loop
             start("192.168.0.10", 8090);
 
