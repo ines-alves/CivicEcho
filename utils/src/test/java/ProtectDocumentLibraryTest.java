@@ -6,6 +6,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import javax.crypto.KeyGenerator;
 
@@ -111,21 +113,36 @@ public class ProtectDocumentLibraryTest {
         
         try {
             // Test encryption
-            library.protect(inputFile, encryptedFile, keyFile, citizenPrivateKeyFile, municipalityPublicKeyFile, "CREATE");
+            library.protect(inputFile, encryptedFile, keyFile, municipalityPublicKeyFile, "CREATE");
             System.out.println("Encryption completed successfully");
 
             // test authenticate and resign
-            library.authenticateAndReSign(encryptedFile, encryptedFile, centralizedPrivateKeyFile, citizenPublicKeyFile);
+            //library.authenticateAndReSign(encryptedFile, encryptedFile, centralizedPrivateKeyFile, citizenPublicKeyFile);
 
+            // dont try to read this trust it works
+            Gson gson = new Gson();
+            String jsonMessage;
+            try (FileReader reader = new FileReader(encryptedFile)) {
+                jsonMessage = gson.fromJson(reader, String.class);
+            }
+    
+            byte[] decoded = Base64.getDecoder().decode(jsonMessage);
+            String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+
+            JsonObject jsonObject = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+            try (FileWriter writer = new FileWriter(encryptedFile)) {
+            Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+            prettyGson.toJson(jsonObject, writer);
+        }
             // Test decryption
-            library.unprotect(encryptedFile, decryptedFile, centralizedPublicKeyFile, municipalityPrivateKeyFile);
+            library.unprotect(encryptedFile, decryptedFile, municipalityPrivateKeyFile);
             System.out.println("Decryption completed successfully");
             
             // Read and verify the decrypted content
             JsonObject decryptedJson;
             try (FileReader reader = new FileReader(decryptedFile)) {
-                Gson gson = new Gson();
-                decryptedJson = gson.fromJson(reader, JsonObject.class);
+                Gson gson2 = new Gson();
+                decryptedJson = gson2.fromJson(reader, JsonObject.class);
             }
             
             // Verify all properties match
