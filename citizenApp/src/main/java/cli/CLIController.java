@@ -40,7 +40,15 @@ public class CLIController {
                             System.out.println("Terminating application.");
                             return;
                         }
-                        break;
+                        try {
+                            socket.close();
+                        } catch (IOException i) {
+                            System.out.println(i);
+                            return;
+                        }
+                        // Once the user is authenticated, start the main loop
+                        start("192.168.0.10", 8090);
+                        return;
                     case "0":
                         System.out.println("Goodbye!");
                         try {
@@ -55,8 +63,6 @@ public class CLIController {
                         System.out.println("Invalid option.");
                 }
             }
-            // Once the user is authenticated, start the main loop
-            start("192.168.0.10", 8090);
 
         } catch (IOException e) {
             System.out.println("Connection error: " + e.getMessage());
