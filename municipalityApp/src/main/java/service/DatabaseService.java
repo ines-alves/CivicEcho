@@ -5,7 +5,14 @@ import com.google.gson.JsonObject;
 import java.sql.*;
 
 public class DatabaseService {
-    private static final String DB_URL = "jdbc:postgresql://192.168.2.100:8080/municipality?sslmode=verify-ca&sslrootcert=../certificates/municipalities/lisbon/lisbon.crt";
+    private static final String DB_URL = "jdbc:postgresql://192.168.2.100:5432/municipality" +
+        "?sslmode=require" +
+        "&sslcert=../certificates/municipalities/lisbon/lisbon.crt" +
+        "&sslkey=../certificates/municipalities/lisbon/lisbon.key" +
+        "&sslrootcert=../certificates/database/db.crt" +
+        "&ssl=true" +
+        "&sslProtocol=TLSv1.3" +
+        "&sslCipherSuites=TLS_AES_128_GCM_SHA256";
     private static final String DB_USERNAME = "municipality_user";
     private static final String DB_PASSWORD = "municipality_pass";
 
