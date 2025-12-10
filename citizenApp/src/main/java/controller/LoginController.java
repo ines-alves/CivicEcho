@@ -7,6 +7,7 @@ import javax.net.ssl.SSLSocket;
 
 public class LoginController {
     public boolean login(Scanner scanner, SSLSocket socket) {
+        int attempts = 3;
         while (true) {
             System.out.println();
             System.out.println("┌─────────────────────────────────┐");
@@ -25,12 +26,17 @@ public class LoginController {
                 continue;
             }
 
-            boolean result = LoginService.sendLogin(socket, citizenID);
+            boolean authenticated = LoginService.sendLogin(socket, citizenID);
             
-            if (result) {
+            if (authenticated) {
                 System.out.println("\nLogin successful!");
                 return true;
             } else {
+                if (attempts == 0) {
+                    System.out.println("\nMaximum login attempts reached.");
+                    return false;
+                }
+                attempts--;
                 System.out.println("\nLogin failed, please try again.");
             }
         }

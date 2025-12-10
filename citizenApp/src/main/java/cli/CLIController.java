@@ -16,12 +16,13 @@ public class CLIController {
     private final ReportController reportController = new ReportController();
     private final LoginController loginController = new LoginController();
 
-    public void login(String host, int port) {
+    public boolean login(String host, int port) {
         SocketFactory factory = SSLSocketFactory.getDefault();
         try (SSLSocket socket = (SSLSocket) factory.createSocket(host, port)) {
             
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
+            
             while (true) {
                 System.out.println();
                 System.out.println("┌─────────────────────────────────┐");
@@ -37,18 +38,17 @@ public class CLIController {
                     case "1":
                         boolean result = loginController.login(scanner, socket);
                         if (!result) {
-                            System.out.println("Terminating application.");
-                            return;
+                            System.out.println("Goodbye!");
+                            return false;
                         }
                         try {
                             socket.close();
+                            socket.close();
                         } catch (IOException i) {
                             System.out.println(i);
-                            return;
+                            return false;
                         }
-                        // Once the user is authenticated, start the main loop
-                        start("192.168.0.10", 8090);
-                        return;
+                        return true;
                     case "0":
                         System.out.println("Goodbye!");
                         try {
@@ -56,16 +56,16 @@ public class CLIController {
                             socket.close();
                         } catch (IOException i) {
                             System.out.println(i);
-                            return;
+                            return false;
                         }
-                        return;
+                        return false;
                     default:
                         System.out.println("Invalid option.");
                 }
             }
-
         } catch (IOException e) {
             System.out.println("Connection error: " + e.getMessage());
+            return false;
         }
     }
     

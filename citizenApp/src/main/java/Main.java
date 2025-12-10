@@ -10,6 +10,10 @@ public class Main {
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
 
         CLIController cli = new CLIController();
-        cli.login("192.168.0.10", 8090); //fix the ip and port
+        boolean authenticated = cli.login("192.168.0.10", 8090); //fix the ip and port
+        // Once the user is authenticated, start the main loop
+        if (authenticated) {
+            cli.start("192.168.0.10", 8090);
+        }
     }
 }
