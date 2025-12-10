@@ -17,6 +17,7 @@ import javax.crypto.spec.SecretKeySpec;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+
 import keys.AESKeyGenerator;
 import keys.RSAKeyGenerator;
 
@@ -126,7 +127,7 @@ public class ProtectDocumentLibrary {
         return cipher.doFinal(cipherBytes);
     }
 
-    private byte[] sign(byte[] data, String privateKeyPath) throws Exception {
+    public byte[] sign(byte[] data, String privateKeyPath) throws Exception {
         PrivateKey privKey = RSAKeyGenerator.readPrivateKey(privateKeyPath);
         Signature sig = Signature.getInstance(SIGNATURE_ALGO);
         sig.initSign(privKey);
@@ -134,7 +135,7 @@ public class ProtectDocumentLibrary {
         return sig.sign();
     }
 
-    private boolean verifySignature(byte[] data, byte[] signature, String publicKeyPath) throws Exception {
+    public boolean verifySignature(byte[] data, byte[] signature, String publicKeyPath) throws Exception {
         PublicKey pubKey = RSAKeyGenerator.readPublicKey(publicKeyPath);
         Signature sig = Signature.getInstance(SIGNATURE_ALGO);
         sig.initVerify(pubKey);
