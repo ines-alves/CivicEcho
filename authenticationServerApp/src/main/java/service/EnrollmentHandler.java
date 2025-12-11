@@ -27,7 +27,7 @@ public class EnrollmentHandler {
     
     private void loadAuthorizedClients() {
        
-        authorizedClients.put("citizen1", "../pubkeys/citizen1.pub");
+        authorizedClients.put("citizen1", "../pubkeys/citizen1.pubkey");
 
     }
 
@@ -57,6 +57,9 @@ public class EnrollmentHandler {
             String clientId = parts[0];
             String csr = parts[1];
             String signatureBase64 = parts[2];
+
+            byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64);
+            byte[] csrBytes = Base64.getDecoder().decode(csr);
             
             System.out.println("[Enrollment] Processing request for: " + clientId);
             
@@ -65,7 +68,7 @@ public class EnrollmentHandler {
                 return "ERROR|Unauthorized client: " + clientId;
             }
             
-            if (!protectDocLib.verifySignature(csr.getBytes(),signatureBase64.getBytes(),authorizedClients.get(clientId))) {
+            if (!protectDocLib.verifySignature(csrBytes, signatureBytes, authorizedClients.get(clientId))) {
                 return "ERROR|Invalid signature";
             }
             
@@ -119,7 +122,7 @@ public class EnrollmentHandler {
             // Build simple command (2 parameters only)
             ProcessBuilder pb = new ProcessBuilder(
                 "bash",
-                "../scripts/sign-certificate.sh",
+                "../sign-certificate.sh",
                 csrFile,
                 outputFile
             );

@@ -154,9 +154,9 @@ public class CentralizedParty {
     }
     public static void main(String args[]) throws IOException {
         // Set SSL properties
-        System.setProperty("javax.net.ssl.keyStore", "../certificates/centralized-party/cp.p12");
+        System.setProperty("javax.net.ssl.keyStore", "../certificates/centralized-party/centralized.p12");
         System.setProperty("javax.net.ssl.keyStorePassword", "changeme");
-        System.setProperty("javax.net.ssl.trustStore", "../certificates/centralized-party/servertruststore.jks");
+        System.setProperty("javax.net.ssl.trustStore", "../certificates/centralized-party/centralized-truststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
         // Start the centralized party
         startCentralizedParty(8090);

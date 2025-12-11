@@ -21,10 +21,10 @@ public class LoginController {
                 return false;
             }
 
-            if (!citizenID.matches("\\d{6}")) {
-                System.out.println("\nCitizen ID must be a six digit integer");
-                continue;
-            }
+            //if (!citizenID.matches("\\d{6}")) {
+                //System.out.println("\nCitizen ID must be a six digit integer");
+                //continue;
+            //}
 
             boolean authenticated = LoginService.sendLogin(socket, citizenID);
             

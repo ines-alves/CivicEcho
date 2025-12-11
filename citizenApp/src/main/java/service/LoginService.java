@@ -8,11 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.io.File;
 
 public class LoginService {
     
-    private static final String CITIZEN_PRIV_KEY_PATH = "../alice.privkey"; //FIXME: change to the correct path
-    private static final String CITIZEN_CERTIFICATE_PATH = "../alice.csr";  //FIXME: change to the correct path
+    private static final String CITIZEN_PRIV_KEY_PATH = "citizens/citizen1/citizen1.privatekey";
+    private static final String CITIZEN_CERTIFICATE_PATH = "citizens/citizen1/citizen1.csr";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
         
     public static boolean sendLogin(SSLSocket socket, String citizenID) {
@@ -28,14 +29,48 @@ public class LoginService {
             
             String loginMessage = citizenID + "|" + certificateBase64 + "|" + signatureBase64;
 
-            System.out.println("\n---- loginMessage: " + loginMessage + "\n-----"); //DEBUG
-
             SocketUtils.writeToSocket(socket, loginMessage);
             
             String response = SocketUtils.readFromSocket(socket);
-            System.out.println("Received response from server: " + response);
 
-            return true; //FIXME: check response for success/failure
+            
+            String[] parts = response.split("\\|");
+            
+            String autentication = parts[0];
+
+            System.out.println("Received response from server: " + autentication);//DEBUG
+
+            if (autentication.equals("ERROR")) {
+                System.out.println("authentication failed: ") ;
+                return false;
+            }
+
+            String crt = parts[1];
+            byte[] crtBytes = Base64.getDecoder().decode(crt);
+            Path crtPath = Paths.get("citizens/citizen1/citizen1.crt");
+            Files.write(crtPath, crtBytes);
+
+            ProcessBuilder pb = new ProcessBuilder(
+                "openssl", "pkcs12", "-export",
+                "-in", "citizen1.crt",
+                "-inkey", "citizen1.key",
+                "-out", "citizen1.p12",
+                "-passout", "pass:changeme"
+            );
+
+
+            pb.directory(new File("citizens/citizen1"));
+
+            // Inherit IO to see output in console
+            pb.inheritIO(); //debug
+
+            // Start the process
+            Process process = pb.start();
+
+            // Wait for the process to complete
+            int exitCode = process.waitFor();
+
+            return true;
 
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());

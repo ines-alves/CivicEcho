@@ -53,10 +53,10 @@ public class AuthenticationServer {
     
     public static void main(String args[]) throws IOException {
 
-        System.setProperty("javax.net.ssl.keyStore", "../certificates/ca/ca-keystore.p12");
+        System.setProperty("javax.net.ssl.keyStore", "../certificates/authentication-server/server.p12");
         System.setProperty("javax.net.ssl.keyStorePassword", "changeme");
-        System.setProperty("javax.net.ssl.trustStore", "../certificates/ca/servertruststore.jks");
-        System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
+        //System.setProperty("javax.net.ssl.trustStore", "../certificates/ca/servertruststore.jks");
+        //System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
         
         startAuthenticationServer(8090);
     }
