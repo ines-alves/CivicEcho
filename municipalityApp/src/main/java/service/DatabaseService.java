@@ -12,8 +12,7 @@ public class DatabaseService {
         "&sslrootcert=../certificates/database/db.crt" +
         "&ssl=true" +
         "&sslProtocol=TLSv1.3" +
-        "&sslCipherSuites=TLS_AES_128_GCM_SHA256" +
-        "&authenticationPluginClassName=org.postgresql.scram.ScramAuthenticationPlugin";
+        "&sslCipherSuites=TLS_AES_128_GCM_SHA256";
     private static final String DB_USERNAME = "municipality_user";
     private static final String DB_PASSWORD = "municipality_pass";
 

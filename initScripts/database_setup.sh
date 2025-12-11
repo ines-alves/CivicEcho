@@ -26,11 +26,10 @@ iface eth0 inet static
         # NO GATEWAY - only local subnet communication
 EOF
 
-apt update
 apt install -y postgresql postgresql-contrib
 
-sudo cp "/mnt/hgfs/SIRS/A03-CivicEcho/certificates/database/db.crt" "/var/lib/postgresql/18/main/server.crt"
-sudo cp "/mnt/hgfs/SIRS/A03-CivicEcho/certificates/database/db.key" "/var/lib/postgresql/18/main/server.key"
+sudo cp "../certificates/database/db.crt" "/var/lib/postgresql/18/main/server.crt"
+sudo cp "../certificates/database/db.key" "/var/lib/postgresql/18/main/server.key"
 sudo chown postgres:postgres "/var/lib/postgresql/18/main/server.crt" "/var/lib/postgresql/18/main/server.key"
 sudo chmod 600 "/var/lib/postgresql/18/main/server.key"
 sudo chmod 644 "/var/lib/postgresql/18/main/server.crt"
@@ -73,7 +72,9 @@ GRANT ALL PRIVILEGES ON DATABASE municipality TO municipality_user;
 EOF
 
 sudo -u postgres psql -p 5432 -d municipality << 'EOF' > /dev/null 2>&1
-CREATE TABLE IF NOT EXISTS reports (
+DROP TABLE IF EXISTS reports CASCADE;
+
+CREATE TABLE reports (
     report_id VARCHAR(255) PRIMARY KEY,
     location VARCHAR(255),
     report_data JSONB,

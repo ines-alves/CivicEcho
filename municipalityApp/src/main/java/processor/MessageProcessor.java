@@ -63,6 +63,7 @@ public class MessageProcessor {
         } finally {
             // Clean up temporary files
             cleanupTempFiles(tempDecryptedFile);
+            cleanupTempFiles(secureDocumentJson);
         }
     }
 
