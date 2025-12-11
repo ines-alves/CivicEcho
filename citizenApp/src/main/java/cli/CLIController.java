@@ -1,24 +1,35 @@
 package cli;
 
-import controller.ReportController;
-import controller.LoginController;
-
-import java.util.Scanner;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import javax.net.SocketFactory;
+import java.security.KeyStore;
+import java.util.Scanner;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
+import controller.LoginController;
+import controller.ReportController;
 
 public class CLIController {
-
     private final Scanner scanner = new Scanner(System.in);
     private final ReportController reportController = new ReportController();
     private final LoginController loginController = new LoginController();
+    
+    // Store the SSL factory (will be updated after login)
+    private SSLSocketFactory sslSocketFactory;
+    
+    public CLIController() {
+        // Start with default factory (no certificate yet)
+        this.sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+    }
 
     public boolean login(String host, int port) {
-        SocketFactory factory = SSLSocketFactory.getDefault();
-        try (SSLSocket socket = (SSLSocket) factory.createSocket(host, port)) {
+        try (SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket(host, port)) {
             
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
@@ -41,23 +52,13 @@ public class CLIController {
                             System.out.println("Goodbye!");
                             return false;
                         }
-                        try {
-                            socket.close();
-                            socket.close();
-                        } catch (IOException i) {
-                            System.out.println(i);
-                            return false;
-                        }
+                        
+                        // AFTER SUCCESSFUL LOGIN: Update SSL factory with certificate
+                        updateSSLSocketFactoryWithCertificate();
+                        
                         return true;
                     case "0":
                         System.out.println("Goodbye!");
-                        try {
-                            scanner.close();
-                            socket.close();
-                        } catch (IOException i) {
-                            System.out.println(i);
-                            return false;
-                        }
                         return false;
                     default:
                         System.out.println("Invalid option.");
@@ -70,12 +71,12 @@ public class CLIController {
     }
     
     public void start(String host, int port) throws IOException {
-        SocketFactory factory = SSLSocketFactory.getDefault();
-        try (SSLSocket socket = (SSLSocket) factory.createSocket(host, port)) {
+        // Now use the UPDATED factory (with certificate)
+        try (SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket(host, port)) {
             
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
-
+            
             while (true) {
                 System.out.println();
                 System.out.println("┌─────────────────────────────────┐");
@@ -98,13 +99,6 @@ public class CLIController {
                         break;
                     case "0":
                         System.out.println("Goodbye!");
-                        try {
-                            scanner.close();
-                            socket.close();
-                        } catch (IOException i) {
-                            System.out.println(i);
-                            return;
-                        }
                         return;
                     default:
                         System.out.println("Invalid option.");
@@ -112,6 +106,66 @@ public class CLIController {
             }
         } catch (IOException e) {
             System.out.println("Connection error: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void updateSSLSocketFactoryWithCertificate() {
+        try {
+            System.out.println("\n=== Updating SSL Factory with citizen certificate ===");
+            
+            String keyStorePath = "citizens/citizen1/citizen1.p12";
+            String keyStorePassword = "changeme";
+            String trustStorePath = "citizens/citizen1/truststore.jks";
+            String trustStorePassword = "changeme";
+            
+            // Verify files exist
+            File keyStoreFile = new File(keyStorePath);
+            File trustStoreFile = new File(trustStorePath);
+            
+            if (!keyStoreFile.exists()) {
+                System.err.println("ERROR: KeyStore not found: " + keyStorePath);
+                return;
+            }
+            if (!trustStoreFile.exists()) {
+                System.err.println("ERROR: TrustStore not found: " + trustStorePath);
+                return;
+            }
+            
+            System.out.println("KeyStore exists: " + keyStoreFile.length() + " bytes");
+            System.out.println("TrustStore exists: " + trustStoreFile.length() + " bytes");
+            
+            // Load keystore (citizen's certificate)
+            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            keyStore.load(new FileInputStream(keyStorePath), keyStorePassword.toCharArray());
+            
+            // Load truststore (CA certificate)
+            KeyStore trustStore = KeyStore.getInstance("JKS");
+            trustStore.load(new FileInputStream(trustStorePath), trustStorePassword.toCharArray());
+            
+            // Create key manager
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(keyStore, keyStorePassword.toCharArray());
+            
+            // Create trust manager
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            tmf.init(trustStore);
+            
+            // Create SSL context
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            
+            // Update the factory
+            this.sslSocketFactory = sslContext.getSocketFactory();
+            
+            System.out.println("SSL Factory updated with citizen certificate");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to update SSL Factory: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

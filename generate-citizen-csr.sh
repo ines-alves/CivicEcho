@@ -65,11 +65,15 @@ fi
 
 echo ""
 echo "--- Step 7: Create Truststore with CA Certificate ---"
+if [ -f "truststore.jks" ]; then
+    echo "Removing existing truststore.jks"
+    rm -f truststore.jks
+fi
+
 # Create a keystore with the CA certificate
 keytool -import -trustcacerts -file "../../$CA_CERT_PATH" -alias auth-ca \
   -keystore truststore.jks -storepass changeme -noprompt
 echo "Created: truststore.jks (contains CA certificate)"
-
 echo ""
 echo "--- Step 8: Create PEM files for easy use ---"
 # Private key in PEM format
