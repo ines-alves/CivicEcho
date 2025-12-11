@@ -27,7 +27,7 @@ public class EnrollmentHandler {
     
     private void loadAuthorizedClients() {
        
-        authorizedClients.put("citizen1", "path/to/citizen1/public_key.pem");
+        authorizedClients.put("citizen1", "../pubkeys/citizen1.pub");
 
     }
 

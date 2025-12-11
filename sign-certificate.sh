@@ -11,9 +11,9 @@ fi
 CSR_FILE="$1"
 OUTPUT_FILE="$2"
 
-CA_CERT="certificates/autheticationServer/ca.crt"
-CA_KEY="certificates/autheticationServer/ca.key"
-CA_SRL="certificates/autheticationServer/ca.srl"
+CA_CERT="certificates/authenticationServer/ca.crt"
+CA_KEY="certificates/authenticationServer/ca.key"
+CA_SRL="certificates/authenticationServer/ca.srl"
 VALID_DAYS=365  
 
 
