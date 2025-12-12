@@ -14,14 +14,14 @@ public class ReportService {
     private static final String TEMP_FILE_DIR = "temp_files/";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
 
-    public static void sendReport(SSLSocket socket, Report report) {
+    public static void sendReport(SSLSocket socket, Report report, String token) {
         try {
             ReportStorage.saveReport(report);
 
             String fileName = TEMP_FILE_DIR + report.getReportId() + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + report.getReportId() + ".json";
 
-            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE");
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE"); //FIXME missing sending the token
 
             SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
             String response = SocketUtils.readFromSocket(socket);

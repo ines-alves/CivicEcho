@@ -13,6 +13,7 @@ import java.util.Map;
 
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
+import token.TokenGenerator;
 
 public class EnrollmentHandler {
     
@@ -89,7 +90,15 @@ public class EnrollmentHandler {
             
             System.out.println("[Enrollment] Successfully issued certificate to: " + clientId);
             
-            return "SUCCESS|" + certificateBase64;
+            String tokens = "";
+            for (int i = 0; i < 10; i++) { // Generate 10 tokens
+                tokens += "|";
+                tokens += TokenGenerator.generateToken();
+            }
+
+            System.out.println("THESE ARE THE TOKENS " + tokens);
+
+            return "SUCCESS|" + certificateBase64 + tokens;
             
         } catch (Exception e) {
             System.err.println("[Enrollment] Processing error: " + e.getMessage());

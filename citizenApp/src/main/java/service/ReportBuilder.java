@@ -22,7 +22,6 @@ public class ReportBuilder {
         System.out.println("┌─────────────────────────────────┐");
         System.out.println("│          CREATE REPORT          │");
         System.out.println("└─────────────────────────────────┘");
-        System.out.println();
 
         report.setReportId(IdGenerator.generateId("echo_"));
         report.setTimestamp(Instant.now().toString());

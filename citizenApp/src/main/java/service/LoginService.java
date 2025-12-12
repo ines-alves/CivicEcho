@@ -2,6 +2,7 @@ package service;
 
 import javax.net.ssl.SSLSocket;
 
+import model.TokenManager;
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
 import java.nio.file.Files;
@@ -69,6 +70,17 @@ public class LoginService {
 
             // Wait for the process to complete
             int exitCode = process.waitFor();
+
+            if (exitCode != 0) {
+                System.err.println("Error creating PKCS#12 file, exit code: " + exitCode);
+                return false;
+            }
+
+            TokenManager tokenManager = TokenManager.getInstance();
+            for (int i = 2; i < parts.length; i++) {
+                System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
+                tokenManager.addToken(parts[i]);
+            }
 
             return true;
 

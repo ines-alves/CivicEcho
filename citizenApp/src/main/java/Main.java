@@ -4,7 +4,7 @@ import java.io.IOException;
 import cli.CLIController;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException { //maybe add a flag to substitute "citizen1" with a custom citizen ID
         try {
             ProcessBuilder pb = new ProcessBuilder(
                 "bash",
