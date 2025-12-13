@@ -5,8 +5,8 @@ import java.util.Queue;
 
 //Singleton class to manage tokens across the citizen application
 public class TokenManager {
-
-    final long TEN_MINUTES_MS = 10 * 60 * 1000; // token validity period
+    // token structure = "token-signature"
+    // token = "randomNumber:expirationTimestamp:location"
 
     private static final TokenManager INSTANCE = new TokenManager();
 
@@ -41,8 +41,8 @@ public class TokenManager {
         String token = tokenQueue.peek();
         String[] parts = token.split("\\:");
         long timestamp = System.currentTimeMillis();
-        long tokenTime = Long.parseLong(parts[1]);
-        if ((timestamp - tokenTime) > TEN_MINUTES_MS) {
+        long expirationTimestamp = Long.parseLong(parts[1]);
+        if (timestamp > expirationTimestamp) {
             return false; // Tokens expired
         }
         return true;

@@ -53,22 +53,21 @@ public class TokenManager {
         info.setRequestTime(timestamp);
         String location = info.getLocation();
         String tokens = "";
+        long expirationTimestamp = timestamp + TEN_MINUTES_MS;
         for (int i=0 ; i<TOKENS_PER_REQUEST; i++) {
-            tokens += "|" + generateToken(location);
+            tokens += "|" + generateToken(location, expirationTimestamp);
         }
         return tokens;
     }
 
-    private String generateToken(String location) throws Exception {
-        long timestamp = System.currentTimeMillis();
-
+    private String generateToken(String location, long expirationTimestamp) throws Exception {
         // Generate a 256-bit random number (virtually zero collisions)
         byte[] randomBytes = new byte[32]; // 256 bits
         secureRandom.nextBytes(randomBytes);
         String randomNumberBase64 = Base64.getEncoder().encodeToString(randomBytes);
 
-        // token = "randomNumber:timestamp:location"
-        String token = randomNumberBase64 + ":" + timestamp + ":" + location;
+        // token = "randomNumber:expirationTimestamp:location"
+        String token = randomNumberBase64 + ":" + expirationTimestamp + ":" + location;
         byte[] tokenBytes = token.getBytes(StandardCharsets.UTF_8);
         
         // Sign token

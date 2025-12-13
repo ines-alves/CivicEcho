@@ -226,7 +226,7 @@ public class ProtectDocumentLibrary {
 
             
             String token = aad.get("token").getAsString();
-            
+            // token = "token-signature"
             String[] parts = token.split("\\-");
 
             byte[] tokenBytes = Base64.getDecoder().decode(parts[0]);
@@ -238,7 +238,13 @@ public class ProtectDocumentLibrary {
                 return false;
             }
 
+            // tokenParts = "randomNumber:expirationTimestamp:location"
             String[] tokenParts = parts[0].split("\\:");
+            long expirationTimestamp = Long.parseLong(tokenParts[1]);
+            long currentTimestamp = System.currentTimeMillis();
+            if(currentTimestamp > expirationTimestamp) {
+                return false;
+            }
 
             if(!tokenParts[2].equals(location)) {
                 return false;
