@@ -6,7 +6,7 @@ import java.util.Scanner;
 import javax.net.ssl.SSLSocket;
 
 public class LoginController {
-    public boolean login(Scanner scanner, SSLSocket socket) {
+    public String login(Scanner scanner, SSLSocket socket) {
         int attempts = 3;
         while (true) {
             System.out.println();
@@ -18,7 +18,7 @@ public class LoginController {
             
             if (citizenID.equalsIgnoreCase("exit")) {
                 System.out.println("\nExiting login.");
-                return false;
+                return null;
             }
 
             //if (!citizenID.matches("\\d{6}")) {
@@ -30,12 +30,12 @@ public class LoginController {
             
             if (authenticated) {
                 System.out.println("\nLogin successful!");
-                return true;
+                return citizenID;
             } else {
                 attempts--;
                 if (attempts == 0) {
                     System.out.println("\nMaximum login attempts reached.");
-                    return false;
+                    return null;
                 }
                 System.out.println("\nLogin failed, please try again.");
             }

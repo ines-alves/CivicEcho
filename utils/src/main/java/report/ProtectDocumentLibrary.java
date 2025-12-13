@@ -44,7 +44,7 @@ public class ProtectDocumentLibrary {
                         System.err.println("Usage: protect <inputDocument> <outputDocument> <symmetricKey> <municipalityPublicKey>");
                         return;
                     }
-                    library.protect(args[1], args[2], args[3], args[4], "CREATE");
+                    library.protect(args[1], args[2], args[3], args[4], "CREATE", args[5]);
                     System.out.println("Document protected successfully!");
                     break;
                     
@@ -53,7 +53,7 @@ public class ProtectDocumentLibrary {
                         System.err.println("Usage: authenticate-resign <encryptedDocument> <reSignedDocument> <centralPrivateKey> <citizenPublicKey>");
                         return;
                     }
-                    library.authenticateAndReSign(args[1], args[2], args[3], args[4]);
+                    library.verifyToken(args[1], args[2], args[3], args[4]);
                     System.out.println("Document authenticated and re-signed successfully!");
                     break;
                     
@@ -144,7 +144,7 @@ public class ProtectDocumentLibrary {
         return verified;
     }
 
-    private JsonObject encryptGCM(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath, String operation) throws Exception {
+    private JsonObject encryptGCM(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath, String operation, String token) throws Exception {
         AESKeyGenerator aeskg = new AESKeyGenerator();
         Key secretKey = aeskg.read(symmetricKeyPath);
 
@@ -165,6 +165,7 @@ public class ProtectDocumentLibrary {
         aadObject.addProperty("timestamp", jsonObject.get("timestamp").getAsString());
         aadObject.addProperty("location", jsonObject.get("location").getAsString());
         aadObject.addProperty("operation", operation);
+        aadObject.addProperty("token", token);
         
         // Convert AAD JSON object to bytes
         byte[] AAD = aadObject.toString().getBytes(StandardCharsets.UTF_8);
@@ -193,8 +194,8 @@ public class ProtectDocumentLibrary {
         return encryptedObject;
     }
 
-    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath, String operation) throws Exception {
-        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName,symmetricKeyPath, municipalityKeyPath, operation);
+    public void protect(String inputDocumentName, String outputDocumentName, String symmetricKeyPath, String municipalityKeyPath, String operation, String token) throws Exception {
+        JsonObject encryptedObject = encryptGCM(inputDocumentName, outputDocumentName,symmetricKeyPath, municipalityKeyPath, operation, token);
         
         byte[] ciphertextBytes = Base64.getDecoder().decode(encryptedObject.get("ciphered").getAsString());
 
@@ -209,7 +210,7 @@ public class ProtectDocumentLibrary {
         }
     }
 
-    public void authenticateAndReSign(String encryptedDocumentName, String reSignedDocumentName, String centralPrivateKeyPath, String citizenPublicKeyPath) throws Exception {
+    public boolean verifyToken(String encryptedDocumentName, String reSignedDocumentName, String centralPrivateKeyPath, String authServerPublicKeyPath) throws Exception {
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
             Gson gson = new Gson();
             
@@ -220,30 +221,29 @@ public class ProtectDocumentLibrary {
             
             // Parse the encrypted JSON structure
             JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
-            String cipheredTextB64 = cipheredJson.get("ciphered").getAsString();
-            byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
+            JsonObject aad  = cipheredJson.getAsJsonObject("aad");
+            String location = aad.get("location").getAsString();
+
             
-            String signatureB64 = cipheredJson.get("signature").getAsString();
-            byte[] signatureBytes = Base64.getDecoder().decode(signatureB64);
+            String token = aad.get("token").getAsString();
+            
+            String[] parts = token.split("\\-");
 
-            // Verify signature
-            boolean isVerified = verifySignature(cipheredText, signatureBytes, citizenPublicKeyPath);
+            byte[] tokenBytes = Base64.getDecoder().decode(parts[0]);
+            byte[] signatureBytes = Base64.getDecoder().decode(parts[1]);
+
+            // Verify token signature
+            boolean isVerified = verifySignature(tokenBytes, signatureBytes, authServerPublicKeyPath);
             if (!isVerified) {
-                throw new SecurityException("Signature verification failed!");
+                return false;
             }
 
-            // Re-sign the ciphertext
-            byte[] newSignature = sign(cipheredText, centralPrivateKeyPath);
-            cipheredJson.addProperty("signature", Base64.getEncoder().encodeToString(newSignature));
+            String[] tokenParts = parts[0].split("\\:");
 
-            // Write re-signed JSON back to file
-            String finalJsonString = new Gson().toJson(cipheredJson);
-            String base64Encoded = Base64.getEncoder().encodeToString(finalJsonString.getBytes(StandardCharsets.UTF_8));
-        
-            try (FileWriter fileWriter = new FileWriter(reSignedDocumentName)) {
-                Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
-                prettyGson.toJson(base64Encoded, fileWriter);
+            if(!tokenParts[2].equals(location)) {
+                return false;
             }
+            return true;
         }
     }
 

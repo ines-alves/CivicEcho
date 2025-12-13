@@ -113,7 +113,7 @@ public class ProtectDocumentLibraryTest {
         
         try {
             // Test encryption
-            library.protect(inputFile, encryptedFile, keyFile, municipalityPublicKeyFile, "CREATE");
+            library.protect(inputFile, encryptedFile, keyFile, municipalityPublicKeyFile, "CREATE", "token");
             System.out.println("Encryption completed successfully");
 
             // test authenticate and resign

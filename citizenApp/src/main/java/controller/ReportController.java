@@ -23,7 +23,7 @@ public class ReportController {
                 ReportService.sendReport(socket, report, token);
                 System.out.println("Report created with ID: " + report.getReportId());
             } else {
-                System.out.println("No more tokens available."); //FIXME handle token renewal
+                System.out.println("No more tokens available."); //sanity check this should not happen
                 return;
             }
         } else {

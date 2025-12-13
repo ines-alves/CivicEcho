@@ -14,11 +14,16 @@ import javax.net.ssl.TrustManagerFactory;
 
 import controller.LoginController;
 import controller.ReportController;
+import controller.TokenController;
+import model.TokenManager;
 
 public class CLIController {
     private final Scanner scanner = new Scanner(System.in);
     private final ReportController reportController = new ReportController();
     private final LoginController loginController = new LoginController();
+    private final TokenController tokenControler = new TokenController();
+    private final TokenManager tokenManager = TokenManager.getInstance();
+    private String citizenID;
     
     // Store the SSL factory (will be updated after login)
     private SSLSocketFactory sslSocketFactory;
@@ -47,21 +52,21 @@ public class CLIController {
 
                 switch (option) {
                     case "1":
-                        boolean result = loginController.login(scanner, socket);
-                        if (!result) {
+                        String result = loginController.login(scanner, socket);
+                        if (result == null) {
                             System.out.println("Goodbye!");
                             return false;
                         }
-                        
+                        citizenID = result;
                         // AFTER SUCCESSFUL LOGIN: Update SSL factory with certificate
                         updateSSLSocketFactoryWithCertificate();
                         
                         return true;
                     case "0":
-                        System.out.println("Goodbye!");
+                        System.out.println("\nGoodbye!");
                         return false;
                     default:
-                        System.out.println("Invalid option.");
+                        System.out.println("\nInvalid option.");
                 }
             }
         } catch (IOException e) {
@@ -78,13 +83,18 @@ public class CLIController {
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
             
             while (true) {
+                int availableTokens = tokenManager.getTokenCount();
                 System.out.println();
                 System.out.println("┌─────────────────────────────────┐");
                 System.out.println("│       CvicEcho CITIZEN APP      │");
                 System.out.println("│             REPORT              │");
+                System.out.printf("│       AVAILABLE TOKENS: %-4d    │%n", availableTokens);
                 System.out.println("├─────────────────────────────────┤");
                 System.out.println("│ 1 ▸ Create Report               │");
                 System.out.println("│ 2 ▸ Read Report                 │");
+                if (availableTokens == 0) {
+                    System.out.println("│ 3 ▸ Request Tokens              │");
+                }
                 System.out.println("│ 0 ▸ Exit                        │");
                 System.out.println("└─────────────────────────────────┘");
                 System.out.print("Option: ");
@@ -92,16 +102,29 @@ public class CLIController {
 
                 switch (option) {
                     case "1":
+                        if (availableTokens == 0) {
+                            boolean result = tokenControler.requestTokens(scanner, socket, citizenID);
+                            if (!result) {
+                                break;
+                            }
+                        }
                         reportController.createReport(scanner, socket);
                         break;
                     case "2":
                         System.out.println("Operation not implemented yet.");
                         break;
+                    case "3":
+                        if (availableTokens != 0) {
+                            System.out.println("\nYou still have tokens left.");
+                            break;
+                        }
+                        tokenControler.requestTokens(scanner, socket, citizenID);
+                        break;
                     case "0":
-                        System.out.println("Goodbye!");
+                        System.out.println("\nGoodbye!");
                         return;
                     default:
-                        System.out.println("Invalid option.");
+                        System.out.println("\nInvalid option.");
                 }
             }
         } catch (IOException e) {

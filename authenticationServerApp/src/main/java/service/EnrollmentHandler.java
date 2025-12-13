@@ -8,33 +8,22 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
-import token.TokenGenerator;
+import tokens.TokenManager;
 
 public class EnrollmentHandler {
     
-    private Map<String, String> authorizedClients;
-
     private ProtectDocumentLibrary protectDocLib = new ProtectDocumentLibrary();
+    private final TokenManager tokenManager = TokenManager.getInstance();
     
-    public EnrollmentHandler() {
-        this.authorizedClients = new HashMap<>();
-        loadAuthorizedClients();
-    }
-    
-    private void loadAuthorizedClients() {
-       
-        authorizedClients.put("citizen1", "../pubkeys/citizen1.pubkey");
-
+    public EnrollmentHandler() { // Initialize the authorized citizens
+        tokenManager.addCitizen("citizen1", "../pubkeys/citizen1.pubkey", "Lisbon");
     }
 
-    public void handleEnrollmentRequest(Socket clientSocket) {
+    public void handleEnrollmentRequest(Socket clientSocket, String request) {
         try {
-            String request = SocketUtils.readFromSocket(clientSocket);
             
             String response = processEnrollment(request);
             
@@ -47,53 +36,51 @@ public class EnrollmentHandler {
         }
     }
     
-
     private String processEnrollment(String request) {
         try {
             String[] parts = request.split("\\|");
             if (parts.length != 3) {
-                return "ERROR|Invalid request format. Expected: clientId|csr|signature";
+                return "ERROR|Invalid request format. Expected: citizenID|csr|signature";
             }
             
-            String clientId = parts[0];
-            String csr = parts[1];
-            String signatureBase64 = parts[2];
+            String citizenID = parts[1];
+            String csr = parts[2];
+            String signatureBase64 = parts[3];
 
             byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64);
             byte[] csrBytes = Base64.getDecoder().decode(csr);
             
-            System.out.println("[Enrollment] Processing request for: " + clientId);
+            System.out.println("[Enrollment] Processing request for: " + citizenID);
             
             // 1. Check if client is authorized
-            if (!isClientAuthorized(clientId)) {
-                return "ERROR|Unauthorized client: " + clientId;
+            if (tokenManager.getCitizenPublicKey(citizenID) == null) {
+                return "ERROR|Unauthorized client: " + citizenID;
             }
             
-            if (!protectDocLib.verifySignature(csrBytes, signatureBytes, authorizedClients.get(clientId))) {
+            if (!protectDocLib.verifySignature(csrBytes, signatureBytes, tokenManager.getCitizenPublicKey(citizenID))) {
                 return "ERROR|Invalid signature";
             }
             
-            System.out.println("[Enrollment] Client " + clientId + " authenticated successfully");
+            System.out.println("[Enrollment] Client " + citizenID + " authenticated successfully");
             
-            String tempCsrFile = saveCsrToTempFile(clientId, csr);
+            String tempCsrFile = saveCsrToTempFile(citizenID, csr);
             
-            String signedCertFile = signCsrWithScript(clientId, tempCsrFile);
+            String signedCertFile = signCsrWithScript(citizenID, tempCsrFile);
             
             if (signedCertFile == null) {
                 return "ERROR|Failed to sign certificate";
             }
             
             String certificateBase64 = readAndEncodeCertificate(signedCertFile);
-
         
             //cleanupTempFiles(tempCsrFile, signedCertFile);
             
-            System.out.println("[Enrollment] Successfully issued certificate to: " + clientId);
+            System.out.println("[Enrollment] Successfully issued certificate to: " + citizenID);
             
-            String tokens = "";
-            for (int i = 0; i < 10; i++) { // Generate 10 tokens
-                tokens += "|";
-                tokens += TokenGenerator.generateToken();
+            String tokens = tokenManager.requestTokens(citizenID);
+
+            if (tokens == null) {
+                return "ERROR|Something that is wrong is not wright"; // This should never happen, future diogo: this kinda can happend if a cient disconects and login again, we prevent that kidna of abuse, nice.
             }
 
             System.out.println("THESE ARE THE TOKENS " + tokens);
@@ -105,15 +92,10 @@ public class EnrollmentHandler {
             return "ERROR|" + e.getMessage();
         }
     }
-    
-    private boolean isClientAuthorized(String clientId) {
-        return authorizedClients.containsKey(clientId);
-    }
-    
 
-    private String saveCsrToTempFile(String clientId, String csr) throws IOException {
+    private String saveCsrToTempFile(String citizenID, String csr) throws IOException {
         String tempDir = System.getProperty("java.io.tmpdir");
-        String filename = tempDir + "/csr-" + clientId + "-" + System.currentTimeMillis() + ".pem";
+        String filename = tempDir + "/csr-" + citizenID + "-" + System.currentTimeMillis() + ".pem";
         
         byte[] csrBytes = Base64.getDecoder().decode(csr);
         Files.write(Paths.get(filename), csrBytes);
@@ -122,10 +104,10 @@ public class EnrollmentHandler {
         return filename;
     }
 
-   private String signCsrWithScript(String clientId, String csrFile) {
+   private String signCsrWithScript(String citizenID, String csrFile) {
         try {
             String tempDir = System.getProperty("java.io.tmpdir");
-            String outputFile = tempDir + "/cert-" + clientId + "-" + 
+            String outputFile = tempDir + "/cert-" + citizenID + "-" + 
                 System.currentTimeMillis() + ".crt";
             
             // Build simple command (2 parameters only)

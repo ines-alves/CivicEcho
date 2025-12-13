@@ -28,7 +28,7 @@ public class LoginService {
             String signatureBase64 = Base64.getEncoder().encodeToString(signature);
             String certificateBase64 = Base64.getEncoder().encodeToString(certificateBytes);
             
-            String loginMessage = citizenID + "|" + certificateBase64 + "|" + signatureBase64;
+            String loginMessage = "LOGIN|" + citizenID + "|" + certificateBase64 + "|" + signatureBase64;
 
             SocketUtils.writeToSocket(socket, loginMessage);
             

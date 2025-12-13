@@ -21,7 +21,7 @@ public class ReportService {
             String fileName = TEMP_FILE_DIR + report.getReportId() + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + report.getReportId() + ".json";
 
-            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE"); //FIXME missing sending the token
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE", token);
 
             SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
             String response = SocketUtils.readFromSocket(socket);

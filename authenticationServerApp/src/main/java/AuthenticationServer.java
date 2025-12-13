@@ -9,6 +9,8 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
 import service.EnrollmentHandler;
+import service.TokenRequestHandler;
+import sockets.SocketUtils;
 
 public class AuthenticationServer {
     private static final String BIND_IP = "0.0.0.0";
@@ -18,6 +20,7 @@ public class AuthenticationServer {
     public static void startAuthenticationServer(int port) throws IOException {
         threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         EnrollmentHandler enrollmentHandler = new EnrollmentHandler();
+        TokenRequestHandler tokenRequestHandler = new TokenRequestHandler();
         
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
         InetAddress bindAddress = InetAddress.getByName(BIND_IP);
@@ -34,12 +37,19 @@ public class AuthenticationServer {
                 try {
                     Socket clientSocket = listener.accept();
                     System.out.println("New enrollment request from: " +  clientSocket.getInetAddress().getHostAddress());
-       
                     threadPool.submit(() -> {
                         try {
-                            enrollmentHandler.handleEnrollmentRequest(clientSocket);
+                            String request = SocketUtils.readFromSocket(clientSocket);
+                            if (request.startsWith("LOGIN|")) {
+                                enrollmentHandler.handleEnrollmentRequest(clientSocket, request);
+                            } else if (request.startsWith("TOKEN|")) {
+                                tokenRequestHandler.handleTokenRequest(clientSocket, request);
+                            } else {
+                                SocketUtils.writeToSocket(clientSocket, "ERROR|Unknown request type");
+                                SocketUtils.closeSocket(clientSocket);
+                            }
                         } catch (Exception ex) {
-                            System.err.println("Error in enrollment handler: " + ex.getMessage());
+                            System.err.println("Error in request handler: " + ex.getMessage());
                         }
                     });
                     
