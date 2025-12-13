@@ -48,7 +48,7 @@ public class TokenRequestHandler {
             
             System.out.println("[TokenRequest] Client " + citizenID + " authenticated successfully");
             
-            String tokens = tokenManager.requestTokens(citizenID);
+            String tokens = tokenManager.requestTokens(citizenID, false);
  
             if (tokens == null) {
                 System.out.println("TOO SOON SINCE LAST REQUEST");//debug

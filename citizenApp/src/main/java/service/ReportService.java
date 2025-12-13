@@ -34,5 +34,19 @@ public class ReportService {
             e.printStackTrace();
         }
     }
+
+    public static void readReport(SSLSocket socket, String numberOfReports, String token) {
+        try {
+            String reportRequest = "READ|" + numberOfReports + "|" + token;
+            SocketUtils.writeToSocket(socket, reportRequest); //FIXME encrypting, storing the asymmetric key for later user
+
+            String response = SocketUtils.readFromSocket(socket);//FIXME decrypting with the sent asymmetric key
+            //FIXME missing a pretty print of the returned reports
+            
+        } catch (Exception e) {
+            System.err.println("Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     
 }

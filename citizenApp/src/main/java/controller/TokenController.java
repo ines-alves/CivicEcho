@@ -20,23 +20,14 @@ public class TokenController {
             String option = scanner.nextLine().trim();
             
             switch (option) {
-                    case "1":
-                        boolean result = TokenService.sendTokenRequest(socket, citizenID);
-                        return result;
-                    case "0":
-                        System.out.println("\nGoing back to main menu.");
-                        return false;
-                    default:
-                        System.out.println("\nInvalid option.");
-                }
-            boolean success = TokenService.sendTokenRequest(socket, citizenID);
-            
-            if (success) {
-                System.out.println("\nToken request successful!");
-                return true;
-            } else {
-                System.out.println("\nToken request failed.");
-                return false;
+                case "1":
+                    boolean result = TokenService.sendTokenRequest(socket, citizenID);
+                    return result;
+                case "0":
+                    System.out.println("\nGoing back to main menu.");
+                    return false;
+                default:
+                    System.out.println("\nInvalid option.");
             }
         }
     }

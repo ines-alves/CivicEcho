@@ -40,7 +40,7 @@ public class TokenManager {
         return (info != null) ? info.getPublicKey() : null;
     }
 
-    public String requestTokens(String citizenID) throws Exception{
+    public String requestTokens(String citizenID, boolean enrollment) throws Exception{
 
         citizenInfo info = tokenMap.get(citizenID);
 
@@ -53,6 +53,11 @@ public class TokenManager {
         info.setRequestTime(timestamp);
         String location = info.getLocation();
         String tokens = "";
+
+        if (enrollment) { // if we are doing the citizen enrollment
+            tokens += ("|" + generateReadToken(location));
+        }
+
         long expirationTimestamp = timestamp + TEN_MINUTES_MS;
         for (int i=0 ; i<TOKENS_PER_REQUEST; i++) {
             tokens += "|" + generateToken(location, expirationTimestamp);
@@ -68,6 +73,27 @@ public class TokenManager {
 
         // token = "randomNumber:expirationTimestamp:location"
         String token = randomNumberBase64 + ":" + expirationTimestamp + ":" + location;
+        byte[] tokenBytes = token.getBytes(StandardCharsets.UTF_8);
+        
+        // Sign token
+        byte[] signatureBytes = protectDocumentLibrary.sign(tokenBytes, AUTHSERVER_PRIV_KEY_PATH);
+
+        // Encode output
+        String tokenBase64 = Base64.getEncoder().encodeToString(tokenBytes);
+        String signatureBase64 = Base64.getEncoder().encodeToString(signatureBytes);
+
+        // "token-signature"
+        return tokenBase64 + "-" + signatureBase64;
+    }
+
+    private String generateReadToken(String location) throws Exception {
+        // Generate a 256-bit random number (virtually zero collisions)
+        byte[] randomBytes = new byte[32]; // 256 bits
+        secureRandom.nextBytes(randomBytes);
+        String randomNumberBase64 = Base64.getEncoder().encodeToString(randomBytes);
+
+        // token = "randomNumber:expirationTimestamp:location"
+        String token = randomNumberBase64 + ":" + location;
         byte[] tokenBytes = token.getBytes(StandardCharsets.UTF_8);
         
         // Sign token

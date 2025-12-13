@@ -111,7 +111,7 @@ public class CLIController {
                         reportController.createReport(scanner, socket);
                         break;
                     case "2":
-                        System.out.println("Operation not implemented yet.");
+                        reportController.readReport(scanner, socket);
                         break;
                     case "3":
                         if (availableTokens != 0) {

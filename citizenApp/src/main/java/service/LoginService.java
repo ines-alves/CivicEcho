@@ -77,8 +77,12 @@ public class LoginService {
             }
 
             TokenManager tokenManager = TokenManager.getInstance();
-            for (int i = 2; i < parts.length; i++) {
-                System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
+            
+            String readToken = parts[2];
+            tokenManager.setReadToken(readToken);
+
+            for (int i = 3; i < parts.length; i++) {
+                System.out.println("---\n" + "Adding token [" + (i-3) + "] " + parts[i] + "\n---"); //DEBUG
                 tokenManager.addToken(parts[i]);
             }
 
