@@ -28,8 +28,8 @@ EOF
 
 apt install -y postgresql postgresql-contrib
 
-sudo cp "../certificates/database/db.crt" "/var/lib/postgresql/18/main/server.crt"
-sudo cp "../certificates/database/db.key" "/var/lib/postgresql/18/main/server.key"
+sudo cp "../certificates/db-server/db.crt" "/var/lib/postgresql/18/main/server.crt"
+sudo cp "../certificates/db-server/db.key" "/var/lib/postgresql/18/main/server.key"
 sudo chown postgres:postgres "/var/lib/postgresql/18/main/server.crt" "/var/lib/postgresql/18/main/server.key"
 sudo chmod 600 "/var/lib/postgresql/18/main/server.key"
 sudo chmod 644 "/var/lib/postgresql/18/main/server.crt"
