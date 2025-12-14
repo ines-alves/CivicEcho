@@ -37,6 +37,8 @@ public class ReportService {
 
     public static void readReport(SSLSocket socket, String numberOfReports, String token) {
         try {
+            //FIXME: Paizão, manda por favor um JSON OBJECT com o attribute content com esse reportRequest,
+            //  eu to lendo assim no metodo processSecureDocument linha 54 do MessageProcessor.java
             String reportRequest = "READ|" + numberOfReports + "|" + token;
             SocketUtils.writeToSocket(socket, reportRequest); //FIXME encrypting, storing the asymmetric key for later user
 

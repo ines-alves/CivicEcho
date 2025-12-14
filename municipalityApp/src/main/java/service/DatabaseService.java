@@ -102,4 +102,62 @@ public class DatabaseService {
         response.addProperty("message", message);
         return new Gson().toJson(response);
     }
+
+    public JsonObject getReports(int numberOfReports) {
+        System.out.println("=== GET MULTIPLE REPORTS DEBUG ===");
+
+        String sql;
+        boolean isAllReports = (numberOfReports == -1);
+
+        if (isAllReports) {
+            sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC";
+            System.out.println("Fetching ALL reports...");
+        } else {
+            sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC LIMIT ?";
+            System.out.println("Fetching " + numberOfReports + " most recent reports...");
+        }
+
+        JsonObject response = new JsonObject();
+        Gson gson = new Gson();
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (!isAllReports) {
+                stmt.setInt(1, numberOfReports);
+            }
+
+            System.out.println("Executing SQL SELECT...");
+            ResultSet rs = stmt.executeQuery();
+
+            com.google.gson.JsonArray reportsArray = new com.google.gson.JsonArray();
+            int count = 0;
+
+            while (rs.next()) {
+                String reportJson = rs.getString("report_data");
+                String createdAt = rs.getString("created_at");
+
+                JsonObject report = gson.fromJson(reportJson, JsonObject.class);
+                report.addProperty("created_at", createdAt);
+
+                reportsArray.add(report);
+                count++;
+
+                System.out.println("Report " + count + ": " + rs.getString("report_id"));
+            }
+
+            System.out.println("Total reports retrieved: " + count);
+
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("count", count);
+            response.add("reports", reportsArray);
+
+        } catch (SQLException e) {
+            System.err.println("PostgreSQL Error during getReports: " + e.getMessage());
+            response.addProperty("status", "ERROR");
+            response.addProperty("message", "Database error: " + e.getMessage());
+        }
+
+        return response;
+    }
 }

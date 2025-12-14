@@ -19,10 +19,6 @@ public class MessageProcessor {
         this.databaseService = new DatabaseService();
     }
 
-    /**
-     * Process a secure document received from CentralizedParty
-     * Uses actual utils methods: SocketUtils and ProtectDocumentLibrary
-     */
     public String processSecureDocument(String secureDocumentJson) throws Exception {
         // Create temporary files for processing
         String tempDecryptedFile = "temp_decrypted_" + System.currentTimeMillis() + ".json";
@@ -34,6 +30,14 @@ public class MessageProcessor {
 
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
+
+            // For READ operations, extract the symmetric key first for later reuse
+            String extractedSymmetricKeyPath = null;
+            if ("READ".equalsIgnoreCase(operation)) {
+                extractedSymmetricKeyPath = "temp_read_key_" + System.currentTimeMillis() + ".key";
+                documentLibrary.extractSymmetricKeyToPath(secureDocumentJson, MUNICIPALITY_PRIVATE_KEY_PATH, extractedSymmetricKeyPath);
+                System.out.println("Extracted symmetric key to: " + extractedSymmetricKeyPath);
+            }
 
             documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, MUNICIPALITY_PRIVATE_KEY_PATH);
 
@@ -47,18 +51,74 @@ public class MessageProcessor {
                 decryptedJson = gson.fromJson(reader, JsonObject.class);
             }
 
-            // Forward to database
-            String result;
+            // Process based on operation type
             if ("CREATE".equalsIgnoreCase(operation)) {
-                result = databaseService.createReport(decryptedJson);
+                String result = databaseService.createReport(decryptedJson);
+                return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
             } else if ("READ".equalsIgnoreCase(operation)) {
-                String reportId = decryptedJson.get("report_id").getAsString();
-                result = databaseService.readReport(reportId);
-            } else {
-                result = "Unknown operation: " + operation;
-            }
+                System.out.println("=== PROCESSING READ REQUEST ===");
 
-            return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
+                // Extract the raw request from decrypted content (should be "READ|numberOfReports|token")
+                String rawRequest = decryptedJson.get("content").getAsString();
+                System.out.println("Raw request: " + rawRequest);
+
+                // Parse the request: "READ|numberOfReports|token"
+                String[] parts = rawRequest.split("\\|");
+                if (parts.length != 3) {
+                    throw new IllegalArgumentException("Invalid read request format. Expected: READ|numberOfReports|token");
+                }
+
+                String numberOfReportsStr = parts[1];
+                String token = parts[2];
+
+                System.out.println("Number of reports requested: " + numberOfReportsStr);
+                System.out.println("Token: " + token);
+
+                // Parse numberOfReports - support "ALL" or numeric value
+                int numberOfReports;
+                if ("ALL".equalsIgnoreCase(numberOfReportsStr)) {
+                    numberOfReports = -1; // Use -1 to indicate "all reports"
+                } else {
+                    try {
+                        numberOfReports = Integer.parseInt(numberOfReportsStr);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Invalid numberOfReports: " + numberOfReportsStr + ". Must be a number or 'ALL'");
+                    }
+                }
+
+                // Query database for reports
+                JsonObject reportsJson = databaseService.getReports(numberOfReports);
+
+                // Create temporary files for encryption
+                String tempReportsFile = "temp_reports_" + System.currentTimeMillis() + ".json";
+                String tempEncryptedFile = "temp_encrypted_" + System.currentTimeMillis() + ".json";
+
+                try {
+                    // Write reports to temporary file
+                    try (java.io.FileWriter writer = new java.io.FileWriter(tempReportsFile)) {
+                        gson.toJson(reportsJson, writer);
+                    }
+
+                    // Encrypt reports using the extracted symmetric key
+                    documentLibrary.ProtectSymmetric(tempReportsFile, tempEncryptedFile, extractedSymmetricKeyPath);
+
+                    System.out.println("Reports encrypted successfully");
+
+                    // Read encrypted file content to return
+                    String encryptedContent;
+                    try (FileReader reader = new FileReader(tempEncryptedFile)) {
+                        encryptedContent = gson.fromJson(reader, String.class);
+                    }
+
+                    return encryptedContent;
+
+                } finally {
+                    // Clean up temporary files
+                    cleanupTempFiles(tempReportsFile, tempEncryptedFile, extractedSymmetricKeyPath);
+                }
+            } else {
+                return "ERROR: Unknown operation: " + operation;
+            }
 
         } finally {
             // Clean up temporary files
