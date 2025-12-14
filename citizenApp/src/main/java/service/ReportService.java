@@ -27,7 +27,8 @@ public class ReportService {
             String response = SocketUtils.readFromSocket(socket);
             System.out.println("Received response from server: " + response);
 
-            ReportStorage.deleteFiles(fileName, protectedFileName);
+            ReportStorage.deleteFile(fileName);
+            ReportStorage.deleteFile(protectedFileName);
 
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
@@ -37,13 +38,28 @@ public class ReportService {
 
     public static void readReport(SSLSocket socket, String numberOfReports, String token) {
         try {
-            //FIXME: Paizão, manda por favor um JSON OBJECT com o attribute content com esse reportRequest,
-            //  eu to lendo assim no metodo processSecureDocument linha 54 do MessageProcessor.java
-            String reportRequest = "READ|" + numberOfReports + "|" + token;
-            SocketUtils.writeToSocket(socket, reportRequest); //FIXME encrypting, storing the asymmetric key for later user
+            String readRequest = "READ|" + numberOfReports + "|" + token;
+            ReportStorage.saveRead(readRequest);
 
-            String response = SocketUtils.readFromSocket(socket);//FIXME decrypting with the sent asymmetric key
-            //FIXME missing a pretty print of the returned reports
+            String fileName = TEMP_FILE_DIR + "readRequest" + ".json";
+            String protectedFileName = TEMP_FILE_DIR + "protected_" + "readRequest" + ".json";
+            String outputFileName = TEMP_FILE_DIR + "readRequest" + "_output" + ".json";
+            String unprotectedFileName = TEMP_FILE_DIR + "unprotected_" + "readRequest" + "_output" + ".json";
+
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE", token);
+
+            SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
+
+            SocketUtils.readSocketToJsonFile(socket, outputFileName);
+
+            protectDocumentLibrary.UnprotectSymmetric(outputFileName, unprotectedFileName, SYMMETRIC_KEY_PATH);
+
+            ReportPrinter.printReportsFromFile(unprotectedFileName);
+
+            ReportStorage.deleteFile(fileName);
+            ReportStorage.deleteFile(protectedFileName);
+            ReportStorage.deleteFile(outputFileName);
+            ReportStorage.deleteFile(outputFileName);
             
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
