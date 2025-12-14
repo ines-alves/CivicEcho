@@ -1,7 +1,9 @@
 package model;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Base64;
 
 //Singleton class to manage tokens across the citizen application
 public class TokenManager {
@@ -48,9 +50,12 @@ public class TokenManager {
 
     private boolean areTokensValid(){
         String token = tokenQueue.peek();
-        String[] parts = token.split("\\:");
+        String[] parts = token.split("\\-");
+        byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
+        String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
+        String[] tokenParts = partsString.split("\\:");
+        long expirationTimestamp = Long.parseLong(tokenParts[1]);
         long timestamp = System.currentTimeMillis();
-        long expirationTimestamp = Long.parseLong(parts[1]);
         if (timestamp > expirationTimestamp) {
             return false; // Tokens expired
         }

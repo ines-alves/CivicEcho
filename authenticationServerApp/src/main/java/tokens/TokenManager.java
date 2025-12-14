@@ -92,7 +92,7 @@ public class TokenManager {
         secureRandom.nextBytes(randomBytes);
         String randomNumberBase64 = Base64.getEncoder().encodeToString(randomBytes);
 
-        // token = "randomNumber:expirationTimestamp:location"
+        // token = "randomNumber:location"
         String token = randomNumberBase64 + ":" + location;
         byte[] tokenBytes = token.getBytes(StandardCharsets.UTF_8);
         

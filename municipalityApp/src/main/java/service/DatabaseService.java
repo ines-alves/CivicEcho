@@ -46,7 +46,7 @@ public class DatabaseService {
         }
     }
 
-    public String readReport(String reportId) {
+    public String readReport(String reportId) { //FIXME take me out
         System.out.println("=== READ REPORT DEBUG ===");
         String sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE report_id = ?";
 
@@ -113,7 +113,7 @@ public class DatabaseService {
             sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC";
             System.out.println("Fetching ALL reports...");
         } else {
-            sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC LIMIT ?";
+            sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC LIMIT ?"; //FIME ADD location filter
             System.out.println("Fetching " + numberOfReports + " most recent reports...");
         }
 

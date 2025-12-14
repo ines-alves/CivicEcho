@@ -27,7 +27,7 @@ public class TokenRequestHandler {
     private  String processTokenRequest(String request) {
         try {
             String[] parts = request.split("\\|");
-            if (parts.length != 2) {
+            if (parts.length != 3) {
                 return "ERROR|Invalid request format. Expected: citizenID|signature";
             }
             

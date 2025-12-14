@@ -39,7 +39,6 @@ public class ReportStorage {
         } catch (IOException e) {
             System.out.println("Error deleting file: " + e.getMessage());
         }
-        System.out.println("Deleted temporary file: " + fileName);
     }
 
         public static void saveRead(String readRequest) {

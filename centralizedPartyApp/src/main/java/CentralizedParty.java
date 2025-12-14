@@ -15,6 +15,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import report.ProtectDocumentLibrary;
 import info.MunicipalityInfo;
 import sockets.SocketUtils;
 import token.TokenManager;
@@ -24,9 +25,11 @@ public class CentralizedParty {
     private static final String BIND_IP = "0.0.0.0"; // Talvez trocar para subnet
     private static final Map<String, MunicipalityInfo> municipalityMap = new HashMap<>();
     private static final String TEMP_FILE_DIR = "temp_files/";
+    private static final String AUTH_SERVER_PUBLIC_KEY_PATH = "../certificates/authentication-server/server.pubkey";
     private static final int THREAD_POOL_SIZE = 10;
     private static ExecutorService threadPool;
     private static final TokenManager tokenManager = new TokenManager();
+    private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
 
 
     static {
@@ -109,7 +112,7 @@ public class CentralizedParty {
     private static String connectToMunicipalityAndForward(String fileName) throws Exception {
 
         // Cleanup expired tokens on every request
-        int removed = tokenManager.cleanupExpiredTokens();
+        int removed = tokenManager.cleanupExpiredTokens();//FIXME maybe do this periodicaly
         if (removed > 0) {
             System.out.println("Cleanup: Removed " + removed + " expired token(s)");
         }
@@ -118,10 +121,17 @@ public class CentralizedParty {
 
         // Extract and verify token
         String token = SocketUtils.getTokenFromJsonFile(fileName);
-        if (!tokenManager.verifyToken(token)) {
-            System.err.println("INVALID TOKEN: " + token);
-            return "ERROR: Invalid or expired token";
+        if (tokenManager.verifyUsedToken(token)) {
+            System.err.println("USED TOKEN: " + token);
+            return "ERROR: token already used";
         }
+
+        if (!protectDocumentLibrary.verifyToken(fileName, AUTH_SERVER_PUBLIC_KEY_PATH)) {
+            System.err.println("INVALID TOKEN: " + token);
+            return "ERROR: invalid token";
+        }
+        
+        tokenManager.storeWriteToken(token);
 
         MunicipalityInfo municipality = municipalityMap.get(location);
 

@@ -39,7 +39,7 @@ public class EnrollmentHandler {
     private String processEnrollment(String request) {
         try {
             String[] parts = request.split("\\|");
-            if (parts.length != 3) {
+            if (parts.length != 4) {
                 return "ERROR|Invalid request format. Expected: citizenID|csr|signature";
             }
             

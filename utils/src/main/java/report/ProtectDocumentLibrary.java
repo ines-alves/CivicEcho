@@ -54,7 +54,7 @@ public class ProtectDocumentLibrary {
                         System.err.println("Usage: authenticate-resign <encryptedDocument> <reSignedDocument> <centralPrivateKey> <citizenPublicKey>");
                         return;
                     }
-                    library.verifyToken(args[1], args[2], args[3], args[4]);
+                    library.verifyToken(args[1], args[2]);
                     System.out.println("Document authenticated and re-signed successfully!");
                     break;
                     
@@ -211,17 +211,12 @@ public class ProtectDocumentLibrary {
         }
     }
 
-    public boolean verifyToken(String encryptedDocumentName, String reSignedDocumentName, String centralPrivateKeyPath, String authServerPublicKeyPath) throws Exception {
+    public boolean verifyToken(String encryptedDocumentName, String authServerPublicKeyPath) throws Exception {
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
             Gson gson = new Gson();
             
-            // Read base64 encoded string from file
-            String jsonStringFromFile = gson.fromJson(fileReader, String.class);
-            byte[] decoded = Base64.getDecoder().decode(jsonStringFromFile);
-            String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
-            
             // Parse the encrypted JSON structure
-            JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
+            JsonObject cipheredJson = gson.fromJson(fileReader, JsonObject.class);
             JsonObject aad  = cipheredJson.getAsJsonObject("aad");
             String location = aad.get("location").getAsString();
 
@@ -240,7 +235,9 @@ public class ProtectDocumentLibrary {
             }
 
             // tokenParts = "randomNumber:expirationTimestamp:location"
-            String[] tokenParts = parts[0].split("\\:");
+            byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
+            String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
+            String[] tokenParts = partsString.split("\\:");
             long expirationTimestamp = Long.parseLong(tokenParts[1]);
             long currentTimestamp = System.currentTimeMillis();
             if(currentTimestamp > expirationTimestamp) {
