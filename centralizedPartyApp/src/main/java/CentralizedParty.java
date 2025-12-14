@@ -17,6 +17,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import info.MunicipalityInfo;
 import sockets.SocketUtils;
+import token.TokenManager;
 
 
 public class CentralizedParty {
@@ -25,6 +26,7 @@ public class CentralizedParty {
     private static final String TEMP_FILE_DIR = "temp_files/";
     private static final int THREAD_POOL_SIZE = 10;
     private static ExecutorService threadPool;
+    private static final TokenManager tokenManager = new TokenManager();
 
 
     static {
@@ -34,7 +36,6 @@ public class CentralizedParty {
     public static void startCentralizedParty(int port) throws IOException {
 
         threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-
 
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
         InetAddress bindAddress = InetAddress.getByName(BIND_IP);
@@ -107,9 +108,23 @@ public class CentralizedParty {
     
     private static String connectToMunicipalityAndForward(String fileName) throws Exception {
 
+        // Cleanup expired tokens on every request
+        int removed = tokenManager.cleanupExpiredTokens();
+        if (removed > 0) {
+            System.out.println("Cleanup: Removed " + removed + " expired token(s)");
+        }
+
         String location = SocketUtils.getLocationFromJsonFile(fileName);
+
+        // Extract and verify token
+        String token = SocketUtils.getTokenFromJsonFile(fileName);
+        if (!tokenManager.verifyToken(token)) {
+            System.err.println("INVALID TOKEN: " + token);
+            return "ERROR: Invalid or expired token";
+        }
+
         MunicipalityInfo municipality = municipalityMap.get(location);
-        
+
         if (municipality == null) {
             return "Unknown municipality for location: " + location;
         }

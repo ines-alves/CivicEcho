@@ -31,14 +31,6 @@ public class MessageProcessor {
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
 
-            // For READ operations, extract the symmetric key first for later reuse
-            String extractedSymmetricKeyPath = null;
-            if ("READ".equalsIgnoreCase(operation)) {
-                extractedSymmetricKeyPath = "temp_read_key_" + System.currentTimeMillis() + ".key";
-                documentLibrary.extractSymmetricKeyToPath(secureDocumentJson, MUNICIPALITY_PRIVATE_KEY_PATH, extractedSymmetricKeyPath);
-                System.out.println("Extracted symmetric key to: " + extractedSymmetricKeyPath);
-            }
-
             documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, MUNICIPALITY_PRIVATE_KEY_PATH);
 
             System.out.println("Document successfully decrypted using utils methods");
@@ -57,6 +49,11 @@ public class MessageProcessor {
                 return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
             } else if ("READ".equalsIgnoreCase(operation)) {
                 System.out.println("=== PROCESSING READ REQUEST ===");
+
+                // Extract the symmetric key for encrypting the response
+                String extractedSymmetricKeyPath = "temp_read_key_" + System.currentTimeMillis() + ".key";
+                documentLibrary.extractSymmetricKeyToPath(secureDocumentJson, MUNICIPALITY_PRIVATE_KEY_PATH, extractedSymmetricKeyPath);
+                System.out.println("Extracted symmetric key to: " + extractedSymmetricKeyPath);
 
                 // Extract the raw request from decrypted content (should be "READ|numberOfReports|token")
                 String rawRequest = decryptedJson.get("content").getAsString();
