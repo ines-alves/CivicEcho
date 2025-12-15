@@ -48,6 +48,26 @@ public class ReportStorage {
 
             String filename = DIRECTORY + "readRequest" + ".json";
 
+            // Token format contains location, but for simplicity, parse from token
+            String[] parts = readRequest.split("\\|");
+            String token = parts.length > 2 ? parts[2] : "";
+
+            // Extract location from token (token format: base64(data:timestamp:location)-signature)
+            String location = ""; 
+            if (!token.isEmpty()) {
+                try {
+                    String[] tokenParts = token.split("-");
+                    if (tokenParts.length > 0) {
+                        String decoded = new String(java.util.Base64.getDecoder().decode(tokenParts[0]));
+                        String[] decodedParts = decoded.split(":");
+                        if (decodedParts.length > 2) {
+                            location = decodedParts[2];
+                        }
+                    }
+                } catch (Exception e) {
+                }
+            }
+
             JsonObject readJson = new JsonObject();
             readJson.addProperty("content", readRequest);
 

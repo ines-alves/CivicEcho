@@ -46,7 +46,7 @@ public class ReportService {
             String outputFileName = TEMP_FILE_DIR + "readRequest" + "_output" + ".json";
             String unprotectedFileName = TEMP_FILE_DIR + "unprotected_" + "readRequest" + "_output" + ".json";
 
-            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE", token);
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "READ", token);
 
             SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
 
