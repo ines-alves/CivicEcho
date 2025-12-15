@@ -103,18 +103,19 @@ public class DatabaseService {
         return new Gson().toJson(response);
     }
 
-    public JsonObject getReports(int numberOfReports) {
+    public JsonObject getReports(int numberOfReports, String location) {
         System.out.println("=== GET MULTIPLE REPORTS DEBUG ===");
+        System.out.println("Filtering by location: " + location);
 
         String sql;
         boolean isAllReports = (numberOfReports == -1);
 
         if (isAllReports) {
-            sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC";
-            System.out.println("Fetching ALL reports...");
+            sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE location = ? ORDER BY created_at DESC";
+            System.out.println("Fetching ALL reports for location: " + location);
         } else {
-            sql = "SELECT report_id, location, report_data, created_at FROM reports ORDER BY created_at DESC LIMIT ?"; //FIME ADD location filter
-            System.out.println("Fetching " + numberOfReports + " most recent reports...");
+            sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE location = ? ORDER BY created_at DESC LIMIT ?";
+            System.out.println("Fetching " + numberOfReports + " most recent reports for location: " + location);
         }
 
         JsonObject response = new JsonObject();
@@ -123,8 +124,12 @@ public class DatabaseService {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+            // Set location parameter (always first parameter)
+            stmt.setString(1, location);
+
+            // Set limit parameter if not fetching all reports
             if (!isAllReports) {
-                stmt.setInt(1, numberOfReports);
+                stmt.setInt(2, numberOfReports);
             }
 
             System.out.println("Executing SQL SELECT...");

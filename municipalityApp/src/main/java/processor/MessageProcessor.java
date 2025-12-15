@@ -83,8 +83,8 @@ public class MessageProcessor {
                     }
                 }
 
-                // Query database for reports
-                JsonObject reportsJson = databaseService.getReports(numberOfReports);
+                // Query database for reports filtered by location
+                JsonObject reportsJson = databaseService.getReports(numberOfReports, location);
 
                 // Create temporary files for encryption
                 String tempReportsFile = "temp_reports_" + System.currentTimeMillis() + ".json";
