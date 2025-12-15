@@ -52,16 +52,17 @@ public class ReportStorage {
             String[] parts = readRequest.split("\\|");
             String token = parts.length > 2 ? parts[2] : "";
 
-            // Extract location from token (token format: base64(data:timestamp:location)-signature)
-            String location = ""; 
+            // Extract location from token (READ token format: base64(randomNumber:location)-signature)
+            String location = ""; // Default location
             if (!token.isEmpty()) {
                 try {
                     String[] tokenParts = token.split("-");
                     if (tokenParts.length > 0) {
                         String decoded = new String(java.util.Base64.getDecoder().decode(tokenParts[0]));
                         String[] decodedParts = decoded.split(":");
-                        if (decodedParts.length > 2) {
-                            location = decodedParts[2];
+                        // READ token has 2 parts: randomNumber:location
+                        if (decodedParts.length >= 2) {
+                            location = decodedParts[1];
                         }
                     }
                 } catch (Exception e) {
@@ -70,6 +71,8 @@ public class ReportStorage {
 
             JsonObject readJson = new JsonObject();
             readJson.addProperty("content", readRequest);
+            readJson.addProperty("timestamp", java.time.Instant.now().toString());
+            readJson.addProperty("location", location);
 
             try (FileWriter fileWriter = new FileWriter(filename)) {
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();

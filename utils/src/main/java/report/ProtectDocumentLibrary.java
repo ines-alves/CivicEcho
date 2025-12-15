@@ -234,19 +234,34 @@ public class ProtectDocumentLibrary {
                 return false;
             }
 
-            // tokenParts = "randomNumber:expirationTimestamp:location"
+            // tokenParts can be either:
+            // WRITE token: "randomNumber:expirationTimestamp:location"
+            // READ token: "randomNumber:location"
             byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
             String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
             String[] tokenParts = partsString.split("\\:");
-            long expirationTimestamp = Long.parseLong(tokenParts[1]);
-            long currentTimestamp = System.currentTimeMillis();
-            if(currentTimestamp > expirationTimestamp) {
+
+            // Check if this is a WRITE token (has 3 parts) or READ token (has 2 parts)
+            if (tokenParts.length == 3) {
+                // WRITE token: verify expiration and location
+                long expirationTimestamp = Long.parseLong(tokenParts[1]);
+                long currentTimestamp = System.currentTimeMillis();
+                if(currentTimestamp > expirationTimestamp) {
+                    return false;
+                }
+                if(!tokenParts[2].equals(location)) {
+                    return false;
+                }
+            } else if (tokenParts.length == 2) {
+                // READ token: only verify location (no expiration)
+                if(!tokenParts[1].equals(location)) {
+                    return false;
+                }
+            } else {
+                // Invalid token format
                 return false;
             }
 
-            if(!tokenParts[2].equals(location)) {
-                return false;
-            }
             return true;
         }
     }
@@ -383,66 +398,80 @@ public class ProtectDocumentLibrary {
     }
 
     public String extractSymmetricKeyToPath(String encryptedDocumentName, String privKeyPath, String outputKeyPath) throws Exception {
+        Gson gson = new Gson();
+        JsonObject cipheredJson;
+
+        // Try to read the file - it could be either a direct JSON object or a base64-encoded string
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
-            Gson gson = new Gson();
-            String base64String = gson.fromJson(fileReader, String.class);
-            byte[] decoded = Base64.getDecoder().decode(base64String);
-            String jsonString = new String(decoded, StandardCharsets.UTF_8);
-            JsonObject cipheredJson = gson.fromJson(jsonString, JsonObject.class);
-
-            String cipheredKeyB64 = cipheredJson.get("key").getAsString();
-            byte[] cipheredKey = Base64.getDecoder().decode(cipheredKeyB64);
-            byte[] decryptedKeyBytes = decryptRSA(cipheredKey, privKeyPath);
-
-            // Save the decrypted symmetric key to the specified path
-            try (FileOutputStream fos = new FileOutputStream(outputKeyPath)) {
-                fos.write(decryptedKeyBytes);
+            // First, try to parse as a JSON object directly
+            cipheredJson = gson.fromJson(fileReader, JsonObject.class);
+        } catch (Exception e) {
+            // If that fails, try reading as a base64-encoded string
+            try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
+                String base64String = gson.fromJson(fileReader, String.class);
+                byte[] decoded = Base64.getDecoder().decode(base64String);
+                String jsonString = new String(decoded, StandardCharsets.UTF_8);
+                cipheredJson = gson.fromJson(jsonString, JsonObject.class);
             }
-
-            return outputKeyPath;
         }
+
+        String cipheredKeyB64 = cipheredJson.get("key").getAsString();
+        byte[] cipheredKey = Base64.getDecoder().decode(cipheredKeyB64);
+        byte[] decryptedKeyBytes = decryptRSA(cipheredKey, privKeyPath);
+
+        // Save the decrypted symmetric key to the specified path
+        try (FileOutputStream fos = new FileOutputStream(outputKeyPath)) {
+            fos.write(decryptedKeyBytes);
+        }
+
+        return outputKeyPath;
     }
 
     public void UnprotectSymmetric(String encryptedDocumentName, String decryptedDocumentName, String symmetricKeyPath) throws Exception {
         AESKeyGenerator aeskg = new AESKeyGenerator();
         Key key = aeskg.read(symmetricKeyPath);
 
+        Gson gson = new Gson();
+        JsonObject cipheredJson;
+
+        // Try to read the file - it could be either a direct JSON object or a base64-encoded string
         try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
-            Gson gson = new Gson();
-
-            // Read base64 encoded string from file
-            String jsonStringFromFile = gson.fromJson(fileReader, String.class);
-            byte[] decoded = Base64.getDecoder().decode(jsonStringFromFile);
-            String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
-
-            // Parse the encrypted JSON structure
-            JsonObject cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
-
-            String cipheredTextB64 = cipheredJson.get("ciphered").getAsString();
-            String ivB64 = cipheredJson.get("iv").getAsString();
-
-            // Decode components
-            byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
-            byte[] iv = Base64.getDecoder().decode(ivB64);
-
-            // Initialize GCM cipher for decryption (no AAD)
-            final int TAG_LENGTH = 128;
-            GCMParameterSpec params = new GCMParameterSpec(TAG_LENGTH, iv);
-            Cipher cipher = Cipher.getInstance(SYMMETRIC_CIPHER_ALGO);
-            cipher.init(Cipher.DECRYPT_MODE, key, params);
-
-            // Perform decryption
-            byte[] decipheredBytes = cipher.doFinal(cipheredText);
-
-            // Convert decrypted bytes back to JSON string
-            String decryptedJsonString = new String(decipheredBytes, StandardCharsets.UTF_8);
-
-            // Write decrypted JSON to output file
-            try (FileWriter fileWriter = new FileWriter(decryptedDocumentName)) {
-                JsonObject decryptedJson = gson.fromJson(decryptedJsonString, JsonObject.class);
-                Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
-                prettyGson.toJson(decryptedJson, fileWriter);
+            // First, try to parse as a JSON object directly
+            cipheredJson = gson.fromJson(fileReader, JsonObject.class);
+        } catch (Exception e) {
+            // If that fails, try reading as a base64-encoded string
+            try (FileReader fileReader = new FileReader(encryptedDocumentName)) {
+                String jsonStringFromFile = gson.fromJson(fileReader, String.class);
+                byte[] decoded = Base64.getDecoder().decode(jsonStringFromFile);
+                String jsonStringFromByteArray = new String(decoded, StandardCharsets.UTF_8);
+                cipheredJson = gson.fromJson(jsonStringFromByteArray, JsonObject.class);
             }
+        }
+
+        String cipheredTextB64 = cipheredJson.get("ciphered").getAsString();
+        String ivB64 = cipheredJson.get("iv").getAsString();
+
+        // Decode components
+        byte[] cipheredText = Base64.getDecoder().decode(cipheredTextB64);
+        byte[] iv = Base64.getDecoder().decode(ivB64);
+
+        // Initialize GCM cipher for decryption (no AAD)
+        final int TAG_LENGTH = 128;
+        GCMParameterSpec params = new GCMParameterSpec(TAG_LENGTH, iv);
+        Cipher cipher = Cipher.getInstance(SYMMETRIC_CIPHER_ALGO);
+        cipher.init(Cipher.DECRYPT_MODE, key, params);
+
+        // Perform decryption
+        byte[] decipheredBytes = cipher.doFinal(cipheredText);
+
+        // Convert decrypted bytes back to JSON string
+        String decryptedJsonString = new String(decipheredBytes, StandardCharsets.UTF_8);
+
+        // Write decrypted JSON to output file
+        try (FileWriter fileWriter = new FileWriter(decryptedDocumentName)) {
+            JsonObject decryptedJson = gson.fromJson(decryptedJsonString, JsonObject.class);
+            Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+            prettyGson.toJson(decryptedJson, fileWriter);
         }
     }
 
