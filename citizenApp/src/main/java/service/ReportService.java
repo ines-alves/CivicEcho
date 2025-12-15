@@ -58,7 +58,7 @@ public class ReportService {
             ReportStorage.deleteFile(fileName);
             ReportStorage.deleteFile(protectedFileName);
             ReportStorage.deleteFile(outputFileName);
-            ReportStorage.deleteFile(outputFileName);
+            ReportStorage.deleteFile(unprotectedFileName);
             
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
