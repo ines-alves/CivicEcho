@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -54,7 +56,7 @@ public class ReportStorage {
             byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
             String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
             String[] tokenParts = partsString.split("\\:");
-            String location = tokenParts[2];
+            String location = tokenParts[1];
 
             JsonObject readJson = new JsonObject();
             readJson.addProperty("content", readRequest);
