@@ -51,7 +51,7 @@ public class TokenManager {
     private boolean areTokensValid(){
         String token = tokenQueue.peek();
         if (token == null) {
-            return false; // Quando não havia tokens ele falhava
+            return false;
         }
         String[] parts = token.split("\\-");
         byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);

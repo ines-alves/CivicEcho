@@ -15,7 +15,6 @@ public class TokenService {
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
     
     public static boolean sendTokenRequest(String citizenID) {
-        // Token requests must go to AuthServer at 192.168.0.20:8090
         try (SSLSocket authSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket("192.168.0.20", 8090)) {
             authSocket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             authSocket.setEnabledProtocols(new String[] { "TLSv1.3" });

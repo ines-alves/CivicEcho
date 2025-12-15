@@ -38,8 +38,7 @@ public class ReportService {
 
     public static void readReport(SSLSocket socket, String numberOfReports, String token) {
         try {
-            String readRequest = "READ|" + numberOfReports + "|" + token;
-            ReportStorage.saveRead(readRequest);
+            ReportStorage.saveRead(numberOfReports, token);
 
             String fileName = TEMP_FILE_DIR + "readRequest" + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + "readRequest" + ".json";

@@ -41,33 +41,20 @@ public class ReportStorage {
         }
     }
 
-        public static void saveRead(String readRequest) {
+        public static void saveRead(String numberOfReports, String token) {
         try {
             Path dir = Paths.get(DIRECTORY);
             if (!Files.exists(dir)) Files.createDirectory(dir);
 
             String filename = DIRECTORY + "readRequest" + ".json";
 
-            // Token format contains location, but for simplicity, parse from token
-            String[] parts = readRequest.split("\\|");
-            String token = parts.length > 2 ? parts[2] : "";
+            String readRequest = "READ|" + numberOfReports + "|" + token;
 
-            // Extract location from token (READ token format: base64(randomNumber:location)-signature)
-            String location = ""; // Default location
-            if (!token.isEmpty()) {
-                try {
-                    String[] tokenParts = token.split("-");
-                    if (tokenParts.length > 0) {
-                        String decoded = new String(java.util.Base64.getDecoder().decode(tokenParts[0]));
-                        String[] decodedParts = decoded.split(":");
-                        // READ token has 2 parts: randomNumber:location
-                        if (decodedParts.length >= 2) {
-                            location = decodedParts[1];
-                        }
-                    }
-                } catch (Exception e) {
-                }
-            }
+            String[] parts = token.split("\\-");
+            byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
+            String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
+            String[] tokenParts = partsString.split("\\:");
+            String location = tokenParts[2];
 
             JsonObject readJson = new JsonObject();
             readJson.addProperty("content", readRequest);
