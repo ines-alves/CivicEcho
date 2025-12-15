@@ -6,7 +6,7 @@ import java.util.Scanner;
 import javax.net.ssl.SSLSocket;
 
 public class TokenController {
-    public boolean requestTokens(Scanner scanner, SSLSocket socket, String citizenID) {
+    public boolean requestTokens(Scanner scanner, String citizenID) {
         while (true) {
             System.out.println();
             System.out.println("┌─────────────────────────────────┐");
@@ -18,10 +18,10 @@ public class TokenController {
             System.out.println("└─────────────────────────────────┘");
             System.out.print("Option: ");
             String option = scanner.nextLine().trim();
-            
+
             switch (option) {
                 case "1":
-                    boolean result = TokenService.sendTokenRequest(socket, citizenID);
+                    boolean result = TokenService.sendTokenRequest(citizenID);
                     return result;
                 case "0":
                     System.out.println("\nGoing back to main menu.");

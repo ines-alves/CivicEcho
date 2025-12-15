@@ -1,6 +1,7 @@
 package service;
 
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 import model.TokenManager;
 import report.ProtectDocumentLibrary;
@@ -13,18 +14,22 @@ public class TokenService {
     private static final String CITIZEN_CERTIFICATE_PATH = "citizens/citizen1/citizen1.csr";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
     
-    public static boolean sendTokenRequest(SSLSocket socket, String citizenID) {
-        try {
+    public static boolean sendTokenRequest(String citizenID) {
+        // Token requests must go to AuthServer at 192.168.0.20:8090
+        try (SSLSocket authSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket("192.168.0.20", 8090)) {
+            authSocket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
+            authSocket.setEnabledProtocols(new String[] { "TLSv1.3" });
+
             byte[] citizenIDBytes = citizenID.getBytes();
             byte[] signature = protectDocumentLibrary.sign(citizenIDBytes, CITIZEN_PRIV_KEY_PATH);
-            
+
             String signatureBase64 = Base64.getEncoder().encodeToString(signature);
-            
+
             String tokenRequestMessage = "TOKEN|" + citizenID + "|" + signatureBase64;
-            
-            SocketUtils.writeToSocket(socket, tokenRequestMessage);
-            
-            String response = SocketUtils.readFromSocket(socket);
+
+            SocketUtils.writeToSocket(authSocket, tokenRequestMessage);
+
+            String response = SocketUtils.readFromSocket(authSocket);
             
             String[] parts = response.split("\\|");
             

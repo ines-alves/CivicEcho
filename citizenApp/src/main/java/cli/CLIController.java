@@ -103,7 +103,7 @@ public class CLIController {
                 switch (option) {
                     case "1":
                         if (availableTokens == 0) {
-                            boolean result = tokenControler.requestTokens(scanner, socket, citizenID);
+                            boolean result = tokenControler.requestTokens(scanner, citizenID);
                             if (!result) {
                                 break;
                             }
@@ -118,7 +118,7 @@ public class CLIController {
                             System.out.println("\nYou still have tokens left.");
                             break;
                         }
-                        tokenControler.requestTokens(scanner, socket, citizenID);
+                        tokenControler.requestTokens(scanner, citizenID);
                         break;
                     case "0":
                         System.out.println("\nGoodbye!");
