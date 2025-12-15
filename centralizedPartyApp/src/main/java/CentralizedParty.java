@@ -130,8 +130,14 @@ public class CentralizedParty {
             System.err.println("INVALID TOKEN: " + token);
             return "ERROR: invalid token";
         }
-        
-        tokenManager.storeWriteToken(token);
+
+        // Get operation type to determine if it's READ or WRITE
+        String operation = SocketUtils.getOperationFromJsonFile(fileName);
+
+        // Only store WRITE tokens (READ tokens never expire and don't need replay protection)
+        if ("CREATE".equalsIgnoreCase(operation)) {
+            tokenManager.storeWriteToken(token);
+        }
 
         MunicipalityInfo municipality = municipalityMap.get(location);
 
