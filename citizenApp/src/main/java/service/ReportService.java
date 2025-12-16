@@ -1,27 +1,39 @@
 package service;
 
 import javax.net.ssl.SSLSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import model.Report;
+import keys.AESKeyGenerator;
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
+import model.TokenManager;
 
 public class ReportService {
 
-    private static final String SYMMETRIC_KEY_PATH = "../test_key.key";
-    //private static final String CITIZEN_PRIV_KEY_PATH = "../alice.privkey";
-    private static final String MUNICIPALITY_PUB_KEY_PATH = "../certificates/municipalities/lisbon/lisbon.pubkey";
+    private static final String SYMMETRIC_KEY_PATH = "temp_keys/symmetric.key";
     private static final String TEMP_FILE_DIR = "temp_files/";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
+    private static final AESKeyGenerator aesKeyGenerator = new AESKeyGenerator();
 
     public static void sendReport(SSLSocket socket, Report report, String token) {
         try {
+            Path path = Paths.get(SYMMETRIC_KEY_PATH);
+            Files.createDirectories(path.getParent());
+
+            // Generate symmetric key for this report request
+            aesKeyGenerator.write(SYMMETRIC_KEY_PATH);
+
             ReportStorage.saveReport(report);
+            TokenManager tokenManager = TokenManager.getInstance();
+            String location = tokenManager.getWriteTokenLocation(token).toLowerCase();
 
             String fileName = TEMP_FILE_DIR + report.getReportId() + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + report.getReportId() + ".json";
 
-            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "CREATE", token);
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, "../certificates/municipalities/" + location + "/" + location + ".pubkey", "CREATE", token);
 
             SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
             String response = SocketUtils.readFromSocket(socket);
@@ -29,6 +41,7 @@ public class ReportService {
 
             ReportStorage.deleteFile(fileName);
             ReportStorage.deleteFile(protectedFileName);
+            ReportStorage.deleteFile(SYMMETRIC_KEY_PATH);
 
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());
@@ -38,14 +51,21 @@ public class ReportService {
 
     public static void readReport(SSLSocket socket, String numberOfReports, String token) {
         try {
+            Path path = Paths.get(SYMMETRIC_KEY_PATH);
+            Files.createDirectories(path.getParent());
+            // Generate symmetric key for this report request
+            aesKeyGenerator.write(SYMMETRIC_KEY_PATH);
+
+            TokenManager tokenManager = TokenManager.getInstance();
             ReportStorage.saveRead(numberOfReports, token);
+            String location = tokenManager.getReadTokenLocation(token).toLowerCase();
 
             String fileName = TEMP_FILE_DIR + "readRequest" + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + "readRequest" + ".json";
             String outputFileName = TEMP_FILE_DIR + "readRequest" + "_output" + ".json";
             String unprotectedFileName = TEMP_FILE_DIR + "unprotected_" + "readRequest" + "_output" + ".json";
 
-            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, MUNICIPALITY_PUB_KEY_PATH, "READ", token);
+            protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, "../certificates/municipalities/" + location + "/" + location + ".pubkey", "READ", token);
 
             SocketUtils.writeJsonFileToSocket(socket, protectedFileName);
 
@@ -59,6 +79,7 @@ public class ReportService {
             ReportStorage.deleteFile(protectedFileName);
             ReportStorage.deleteFile(outputFileName);
             ReportStorage.deleteFile(unprotectedFileName);
+            ReportStorage.deleteFile(SYMMETRIC_KEY_PATH);
             
         } catch (Exception e) {
             System.err.println("Unexpected error: " + e.getMessage());

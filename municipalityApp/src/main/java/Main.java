@@ -6,7 +6,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         // Check if municipality argument is provided
         if (args.length < 1) {
-            System.err.println("Usage: java Main <municipality>");
+            System.err.println("Usage: mvn compile exec:java -Dexec.args=\"<municipality>\"");
             System.err.println("Available municipalities: Lisbon, Porto");
             System.exit(1);
         }

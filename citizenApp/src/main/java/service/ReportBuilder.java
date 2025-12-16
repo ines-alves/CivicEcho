@@ -135,7 +135,14 @@ public class ReportBuilder {
 
     public void editLocation() {
         System.out.print("Location: ");
-        report.setLocation(scanner.nextLine().trim());
+        String location = scanner.nextLine().trim().toLowerCase();
+        if (location.equalsIgnoreCase("lisbon") || location.equalsIgnoreCase("porto")) {
+            report.setLocation(location);
+        }
+        else {
+            System.out.println("Invalid location. The only valid locations are 'Lisbon' and 'Porto'.");
+            editLocation();
+        }
     }
 
     public void editCoordinates() {

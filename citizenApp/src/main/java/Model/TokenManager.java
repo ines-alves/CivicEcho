@@ -64,4 +64,27 @@ public class TokenManager {
         }
         return true;
     }
+
+    public String getWriteTokenLocation(String token) {
+        if (token == null) {
+            return null;
+        }
+        String[] parts = token.split("\\-");
+        byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
+        String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
+        String[] tokenParts = partsString.split("\\:");
+        return tokenParts[2];
+    }
+    
+    public String getReadTokenLocation(String token) {
+        if (token == null) {
+            return null;
+        }
+        String[] parts = token.split("\\-");
+        byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
+        String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
+        String[] tokenParts = partsString.split("\\:");
+        return tokenParts[1];
+    }
+
 }

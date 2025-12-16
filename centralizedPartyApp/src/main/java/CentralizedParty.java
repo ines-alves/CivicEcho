@@ -165,8 +165,8 @@ public class CentralizedParty {
     }
 
     private static void initMunicipalityMap() {
-        municipalityMap.put("Lisbon", new MunicipalityInfo("192.168.1.1", 8091));
-        municipalityMap.put("Porto", new MunicipalityInfo("127.0.0.1", 8091)); // Porto still localhost for now
+        municipalityMap.put("lisbon", new MunicipalityInfo("192.168.1.1", 8091));
+        municipalityMap.put("porto", new MunicipalityInfo("192.168.1.2", 8091));
     }
 
     private static void deleteFile(String fileName, String fileNameResign) {

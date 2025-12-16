@@ -10,8 +10,6 @@ import java.util.Base64;
 
 public class TokenService {
 
-    private static final String CITIZEN_PRIV_KEY_PATH = "citizens/citizen1/citizen1.privatekey";
-    private static final String CITIZEN_CERTIFICATE_PATH = "citizens/citizen1/citizen1.csr";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
     
     public static boolean sendTokenRequest(String citizenID) {
@@ -20,7 +18,7 @@ public class TokenService {
             authSocket.setEnabledProtocols(new String[] { "TLSv1.3" });
 
             byte[] citizenIDBytes = citizenID.getBytes();
-            byte[] signature = protectDocumentLibrary.sign(citizenIDBytes, CITIZEN_PRIV_KEY_PATH);
+            byte[] signature = protectDocumentLibrary.sign(citizenIDBytes, "citizens/" + citizenID + "/" + citizenID + ".privatekey");
 
             String signatureBase64 = Base64.getEncoder().encodeToString(signature);
 

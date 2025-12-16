@@ -4,12 +4,20 @@ import java.io.IOException;
 import cli.CLIController;
 
 public class Main {
-    public static void main(String[] args) throws IOException { //maybe add a flag to substitute "citizen1" with a custom citizen ID
+    public static void main(String[] args) throws IOException {
+        // Check if municipality argument is provided
+        if (args.length < 1) {
+            System.err.println("Usage: mvn exec:java -Dexec.args=\"citizenID\"");
+            System.exit(1);
+        }
+        
+        String citizenID = args[0].toLowerCase();
+
         try {
             ProcessBuilder pb = new ProcessBuilder(
                 "bash",
                 "../generate-citizen-csr.sh",
-                "citizen1",
+                citizenID,
                 "../certificates/authentication-server/ca.crt"
             );
             
@@ -30,7 +38,7 @@ public class Main {
             return;
         }
 
-        System.setProperty("javax.net.ssl.trustStore", "citizens/citizen1/truststore.jks");
+        System.setProperty("javax.net.ssl.trustStore", "citizens/" + citizenID + "/truststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
         
         CLIController cli = new CLIController();

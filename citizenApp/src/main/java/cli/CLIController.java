@@ -140,9 +140,9 @@ public class CLIController {
         try {
             System.out.println("\n=== Updating SSL Factory with citizen certificate ===");
             
-            String keyStorePath = "citizens/citizen1/citizen1.p12";
+            String keyStorePath = "citizens/" + citizenID + "/" + citizenID + ".p12";
             String keyStorePassword = "changeme";
-            String trustStorePath = "citizens/citizen1/truststore.jks";
+            String trustStorePath = "citizens/" + citizenID + "/truststore.jks";
             String trustStorePassword = "changeme";
             
             // Verify files exist

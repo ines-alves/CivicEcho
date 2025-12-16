@@ -13,17 +13,15 @@ import java.io.File;
 
 public class LoginService {
     
-    private static final String CITIZEN_PRIV_KEY_PATH = "citizens/citizen1/citizen1.privatekey";
-    private static final String CITIZEN_CERTIFICATE_PATH = "citizens/citizen1/citizen1.csr";
     private static final ProtectDocumentLibrary protectDocumentLibrary = new ProtectDocumentLibrary();
         
     public static boolean sendLogin(SSLSocket socket, String citizenID) {
         try {
 
-            Path path = Paths.get(CITIZEN_CERTIFICATE_PATH);
+            Path path = Paths.get("citizens/" + citizenID + "/" + citizenID + ".csr");
             byte[] certificateBytes = Files.readAllBytes(path);
 
-            byte[] signature = protectDocumentLibrary.sign(certificateBytes, CITIZEN_PRIV_KEY_PATH);
+            byte[] signature = protectDocumentLibrary.sign(certificateBytes, "citizens/" + citizenID + "/" + citizenID + ".privatekey");
 
             String signatureBase64 = Base64.getEncoder().encodeToString(signature);
             String certificateBase64 = Base64.getEncoder().encodeToString(certificateBytes);
@@ -48,19 +46,19 @@ public class LoginService {
 
             String crt = parts[1];
             byte[] crtBytes = Base64.getDecoder().decode(crt);
-            Path crtPath = Paths.get("citizens/citizen1/citizen1.crt");
+            Path crtPath = Paths.get("citizens/" + citizenID + "/" + citizenID + ".crt");
             Files.write(crtPath, crtBytes);
 
             ProcessBuilder pb = new ProcessBuilder(
                 "openssl", "pkcs12", "-export",
-                "-in", "citizen1.crt",
-                "-inkey", "citizen1.key",
-                "-out", "citizen1.p12",
+                "-in", citizenID + ".crt",
+                "-inkey", citizenID + ".key",
+                "-out", citizenID + ".p12",
                 "-passout", "pass:changeme"
             );
 
 
-            pb.directory(new File("citizens/citizen1"));
+            pb.directory(new File("citizens/" + citizenID));
 
             // Inherit IO to see output in console
             pb.inheritIO(); //debug

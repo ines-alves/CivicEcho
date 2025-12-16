@@ -57,7 +57,7 @@ public class TokenRequestHandler {
  
             System.out.println("THESE ARE THE TOKENS " + tokens);
             
-            return "SUCCESS|" + tokens;
+            return "SUCCESS" + tokens;
             
         } catch (Exception e) {
             System.err.println("[TokenRequest] Error processing request: " + e.getMessage());
