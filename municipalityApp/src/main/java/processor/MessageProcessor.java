@@ -10,13 +10,12 @@ import java.io.FileReader;
 public class MessageProcessor {
     private final ProtectDocumentLibrary documentLibrary;
     private final DatabaseService databaseService;
+    private final String municipalityPrivateKeyPath;
 
-    // Certificate paths for municipality (Lisbon)
-    private static final String MUNICIPALITY_PRIVATE_KEY_PATH = "../certificates/municipalities/lisbon/lisbon.privatekey";
-
-    public MessageProcessor() {
+    public MessageProcessor(String municipality) {
         this.documentLibrary = new ProtectDocumentLibrary();
-        this.databaseService = new DatabaseService();
+        this.databaseService = new DatabaseService(municipality);
+        this.municipalityPrivateKeyPath = "../certificates/municipalities/" + municipality + "/" + municipality + ".privatekey";
     }
 
     public String processSecureDocument(String secureDocumentJson) throws Exception {
@@ -31,7 +30,7 @@ public class MessageProcessor {
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
 
-            documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, MUNICIPALITY_PRIVATE_KEY_PATH);
+            documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, municipalityPrivateKeyPath);
 
             System.out.println("Document successfully decrypted using utils methods");
             System.out.println("Decrypted content: " + tempDecryptedFile);
@@ -52,7 +51,7 @@ public class MessageProcessor {
 
                 // Extract the symmetric key for encrypting the response
                 String extractedSymmetricKeyPath = "temp_read_key_" + System.currentTimeMillis() + ".key";
-                documentLibrary.extractSymmetricKeyToPath(secureDocumentJson, MUNICIPALITY_PRIVATE_KEY_PATH, extractedSymmetricKeyPath);
+                documentLibrary.extractSymmetricKeyToPath(secureDocumentJson, municipalityPrivateKeyPath, extractedSymmetricKeyPath);
                 System.out.println("Extracted symmetric key to: " + extractedSymmetricKeyPath);
 
                 // Extract the raw request from decrypted content (should be "READ|numberOfReports|token")

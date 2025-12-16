@@ -249,12 +249,12 @@ public class ProtectDocumentLibrary {
                 if(currentTimestamp > expirationTimestamp) {
                     return false;
                 }
-                if(!tokenParts[2].equals(location)) {
+                if(!tokenParts[2].equalsIgnoreCase(location)) {
                     return false;
                 }
             } else if (tokenParts.length == 2) {
                 // READ token: only verify location (no expiration)
-                if(!tokenParts[1].equals(location)) {
+                if(!tokenParts[1].equalsIgnoreCase(location)) {
                     return false;
                 }
             } else {

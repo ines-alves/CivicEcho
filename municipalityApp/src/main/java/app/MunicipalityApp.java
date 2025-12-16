@@ -15,8 +15,10 @@ import sockets.SocketUtils;
 
 public class MunicipalityApp {
     private static final String BIND_IP = "0.0.0.0"; // IP da centralized Party no VMNET3
+    private static String municipality; // Store municipality name for use in handlers
 
-    public static void startMunicipalityServer(int port) throws IOException {
+    public static void startMunicipalityServer(int port, String municipalityName) throws IOException {
+        municipality = municipalityName;
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
         InetAddress bindAddress = InetAddress.getByName(BIND_IP);
 
@@ -42,7 +44,7 @@ public class MunicipalityApp {
     }
 
     private static void handleCentralizedPartyRequest(Socket clientSocket) throws Exception {
-        MessageProcessor processor = new MessageProcessor();
+        MessageProcessor processor = new MessageProcessor(municipality);
         String tempProcessedFile = "temp_processed_" + System.currentTimeMillis() + ".json";
 
         try {

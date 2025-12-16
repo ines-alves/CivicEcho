@@ -5,16 +5,20 @@ import com.google.gson.JsonObject;
 import java.sql.*;
 
 public class DatabaseService {
-    private static final String DB_URL = "jdbc:postgresql://192.168.2.100:5432/municipality" +
-        "?sslmode=require" +
-        "&sslcert=../certificates/municipalities/lisbon/lisbon.crt" +
-        "&sslkey=../certificates/municipalities/lisbon/lisbon.key" +
-        "&sslrootcert=../certificates/database/db.crt" +
-        "&ssl=true" +
-        "&sslProtocol=TLSv1.3" +
-        "&sslCipherSuites=TLS_AES_128_GCM_SHA256";
+    private final String dbUrl;
     private static final String DB_USERNAME = "municipality_user";
     private static final String DB_PASSWORD = "municipality_pass";
+
+    public DatabaseService(String municipality) {
+        this.dbUrl = "jdbc:postgresql://192.168.2.100:5432/municipality" +
+            "?sslmode=require" +
+            "&sslcert=../certificates/municipalities/" + municipality + "/" + municipality + ".crt" +
+            "&sslkey=../certificates/municipalities/" + municipality + "/" + municipality + ".key" +
+            "&sslrootcert=../certificates/database/db.crt" +
+            "&ssl=true" +
+            "&sslProtocol=TLSv1.3" +
+            "&sslCipherSuites=TLS_AES_128_GCM_SHA256";
+    }
 
     public String createReport(JsonObject report) {
         System.out.println("=== CREATE REPORT DEBUG ===");
@@ -46,44 +50,9 @@ public class DatabaseService {
         }
     }
 
-    public String readReport(String reportId) { //FIXME take me out
-        System.out.println("=== READ REPORT DEBUG ===");
-        String sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE report_id = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            System.out.println("Searching for report ID: " + reportId);
-
-            stmt.setString(1, reportId);
-
-            System.out.println("Executing SQL SELECT...");
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                String reportJson = rs.getString("report_data");
-                String location = rs.getString("location");
-                String createdAt = rs.getString("created_at");
-
-                System.out.println("Report found!");
-                System.out.println("Location: " + location);
-                System.out.println("Created at: " + createdAt);
-                System.out.println("Report data: " + reportJson);
-
-                return createSuccessResponse("Report found: " + reportId, reportJson);
-            } else {
-                System.out.println("Report not found in database");
-                return createErrorResponse("Report not found: " + reportId);
-            }
-
-        } catch (SQLException e) {
-            System.err.println("PostgreSQL Error during read: " + e.getMessage());
-            return createErrorResponse("Database error reading report: " + e.getMessage());
-        }
-    }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
+        return DriverManager.getConnection(dbUrl, DB_USERNAME, DB_PASSWORD);
     }
 
     private String createSuccessResponse(String message, Object data) {
