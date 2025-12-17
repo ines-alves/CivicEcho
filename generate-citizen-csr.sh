@@ -5,7 +5,31 @@ set -e
 CITIZEN_ID="$1"
 CA_CERT_PATH="$2"
 OUTPUT_DIR="citizens/$CITIZEN_ID"
-PUBKEYS_DIR="../../../pubkeys"  
+PUBKEYS_DIR="../../../pubkeys"
+
+# --- Safety checks ---
+if [ -z "$CITIZEN_ID" ]; then
+    echo "Error: CITIZEN_ID not provided"
+    exit 1
+fi
+
+# --- Cleanup existing materials if they exist ---
+if [ -d "$OUTPUT_DIR" ]; then
+    echo "Existing materials found for $CITIZEN_ID"
+    echo "Removing existing directory: $OUTPUT_DIR"
+    rm -rf "$OUTPUT_DIR"
+fi
+
+# Remove existing public keys (if any)
+if [ -f "$PUBKEYS_DIR/$CITIZEN_ID.pubkey" ]; then
+    echo "Removing existing public key: $PUBKEYS_DIR/$CITIZEN_ID.pubkey"
+    rm -f "$PUBKEYS_DIR/$CITIZEN_ID.pubkey"
+fi
+
+if [ -f "$PUBKEYS_DIR/$CITIZEN_ID.pub" ]; then
+    echo "Removing existing public key: $PUBKEYS_DIR/$CITIZEN_ID.pub"
+    rm -f "$PUBKEYS_DIR/$CITIZEN_ID.pub"
+fi
 
 echo "=== Generating Citizen Certificate Materials: $CITIZEN_ID ==="
 

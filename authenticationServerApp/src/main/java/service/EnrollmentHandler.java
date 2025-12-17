@@ -73,14 +73,14 @@ public class EnrollmentHandler {
             
             String certificateBase64 = readAndEncodeCertificate(signedCertFile);
         
-            //cleanupTempFiles(tempCsrFile, signedCertFile);
+            cleanupTempFiles(tempCsrFile, signedCertFile);
             
             System.out.println("[Enrollment] Successfully issued certificate to: " + citizenID);
             
             String tokens = tokenManager.requestTokens(citizenID, true);
 
             if (tokens == null) {
-                return "ERROR|Something that is wrong is not wright"; // This should never happen, future diogo: this kinda can happend if a cient disconects and login again, we prevent that kidna of abuse, nice.
+                return "ERROR|too many logins"; // Can happend if a cient disconects and login again.
             }
 
             System.out.println("THESE ARE THE TOKENS " + tokens);

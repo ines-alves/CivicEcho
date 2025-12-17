@@ -2,7 +2,16 @@
 
 set -e
 
-echo "=== CivicEcho PKI - Authentication Server as Root CA ==="
+CERTS_DIR="certificates"
+
+# --- Safety cleanup ---
+if [ -d "$CERTS_DIR" ]; then
+    echo "Certificates detected at '$CERTS_DIR'"
+    echo "Removing all existing certificates and keys..."
+    rm -rf "$CERTS_DIR"
+fi
+
+echo "=== CivicEcho A03 - Authentication Server as Root CA ==="
 
 mkdir -p certificates/{authentication-server,db-server,centralized-party,municipalities/lisbon,municipalities/porto}
 cd certificates
