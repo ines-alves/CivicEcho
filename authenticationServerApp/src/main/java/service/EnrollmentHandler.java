@@ -20,6 +20,7 @@ public class EnrollmentHandler {
     
     public EnrollmentHandler() { // Initialize the authorized citizens
         tokenManager.addCitizen("citizen1", "../pubkeys/citizen1.pubkey", "Lisbon");
+        tokenManager.addCitizen("citizen2", "../pubkeys/citizen2.pubkey", "Porto");
     }
 
     public void handleEnrollmentRequest(Socket clientSocket, String request) {

@@ -12,8 +12,14 @@ import javax.net.ssl.SSLSocketFactory;
 
 import processor.MessageProcessor;
 import sockets.SocketUtils;
+import java.security.cert.Certificate;
+import java.security.PublicKey;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class MunicipalityApp {
+    private static final String CENTRALZED_PUB_KEY = "../certificates/centralized-party/centralized.pubkey";
     private static final String BIND_IP = "0.0.0.0"; // IP da centralized Party no VMNET3
     private static String municipality; // Store municipality name for use in handlers
 
@@ -30,16 +36,21 @@ public class MunicipalityApp {
             System.out.println("Municipality server listening on port " + port + "...");
 
             while (true) {  // Add loop to accept multiple connections
-            try (Socket clientSocket = listener.accept()) {
-                System.out.println("New CentralizedParty connected from: " + clientSocket.getInetAddress().getHostAddress());
-                handleCentralizedPartyRequest(clientSocket);
-                System.out.println("CentralizedParty disconnected from: " + clientSocket.getInetAddress().getHostAddress());
-            } catch (Exception e) {
-                System.err.println("Error handling centralized party request: " + e.getMessage());
-                e.printStackTrace();
-                // Don't break - continue accepting new connections
+                try (Socket clientSocket = listener.accept()) {
+                    boolean result = extractCentralizedPartyCertificateInfo(clientSocket);
+                    if (!result) {
+                        System.out.println("Client certificate verification failed. Closing connection.");
+                        continue;
+                    }
+                    System.out.println("New CentralizedParty connected from: " + clientSocket.getInetAddress().getHostAddress());
+                    handleCentralizedPartyRequest(clientSocket);
+                    System.out.println("CentralizedParty disconnected from: " + clientSocket.getInetAddress().getHostAddress());
+                } catch (Exception e) {
+                    System.err.println("Error handling centralized party request: " + e.getMessage());
+                    e.printStackTrace();
+                    // Don't break - continue accepting new connections
+                }
             }
-        }
         }
     }
 
@@ -60,6 +71,28 @@ public class MunicipalityApp {
             System.err.println("Communication error: " + e.getMessage());
             throw e;
         }
+    }
+
+    private static boolean extractCentralizedPartyCertificateInfo(Socket clientSocket) {
+        try {
+            if (clientSocket instanceof SSLSocket) {
+                SSLSocket sslSocket = (SSLSocket) clientSocket;
+                Certificate[] certs = sslSocket.getSession().getPeerCertificates();
+                if (certs.length > 0) {
+                    PublicKey receivedPubKey = certs[0].getPublicKey();
+                    byte[] receivedPubKeyBytes = receivedPubKey.getEncoded();
+
+                    byte[] expectedPubKeyBytes = Files.readAllBytes(Paths.get(CENTRALZED_PUB_KEY));
+
+                    boolean match = Arrays.equals(receivedPubKeyBytes, expectedPubKeyBytes);
+                    return match;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error verifying centralized party certificate: " + e.getMessage());
+            return false;
+        }
+        return false;
     }
 
 }
