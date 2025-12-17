@@ -55,7 +55,18 @@ for i in {1..30}; do
     sleep 1
 done
 
-sudo -u postgres psql -p 5432 << 'EOF' > /dev/null 2>&1
+echo "Waiting for PostgreSQL to be ready..."
+for i in {1..30}; do
+    if sudo -u postgres pg_isready -p 5432 > /dev/null 2>&1; then
+        echo "PostgreSQL is ready!"
+        break
+    fi
+    echo "Waiting... ($i/30)"
+    sleep 2
+done
+
+echo "Creating database and user..."
+sudo -u postgres psql -p 5432 << 'EOF'
 SELECT 'CREATE DATABASE municipality'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'municipality')\gexec
 
@@ -63,15 +74,17 @@ DO
 $do$
 BEGIN
    IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = 'municipality_user') THEN
-      CREATE USER municipality_user WITH PASSWORD 'municipality_pass' PASSWORD_ENCRYPTION 'scram-sha-256';
+      CREATE USER municipality_user WITH PASSWORD 'municipality_pass';
    END IF;
 END
 $do$;
 
 GRANT ALL PRIVILEGES ON DATABASE municipality TO municipality_user;
+GRANT ALL PRIVILEGES ON SCHEMA public TO municipality_user;
 EOF
 
-sudo -u postgres psql -p 5432 -d municipality << 'EOF' > /dev/null 2>&1
+echo "Creating reports table..."
+sudo -u postgres psql -p 5432 -d municipality << 'EOF'
 DROP TABLE IF EXISTS reports CASCADE;
 
 CREATE TABLE reports (
@@ -80,8 +93,14 @@ CREATE TABLE reports (
     report_data JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-GRANT ALL ON reports TO municipality_user;
-GRANT ALL ON SCHEMA public TO municipality_user;
+
+GRANT ALL PRIVILEGES ON TABLE reports TO municipality_user;
+GRANT ALL PRIVILEGES ON SCHEMA public TO municipality_user;
+GRANT USAGE ON SCHEMA public TO municipality_user;
 EOF
+
+echo "Verifying database setup..."
+sudo -u postgres psql -p 5432 -c "\du" | grep municipality_user
+sudo -u postgres psql -p 5432 -d municipality -c "\dt" | grep reports
 
 sudo systemctl enable postgresql
