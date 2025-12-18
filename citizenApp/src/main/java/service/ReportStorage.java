@@ -56,7 +56,7 @@ public class ReportStorage {
             byte[] partsDeocoded = Base64.getDecoder().decode(parts[0]);
             String partsString = new String(partsDeocoded, StandardCharsets.UTF_8);
             String[] tokenParts = partsString.split("\\:");
-            String location = tokenParts[1];
+            String location = tokenParts[1].toLowerCase();
 
             JsonObject readJson = new JsonObject();
             readJson.addProperty("content", readRequest);

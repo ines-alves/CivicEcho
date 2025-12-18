@@ -117,7 +117,7 @@ public class CentralizedParty {
             System.out.println("Cleanup: Removed " + removed + " expired token(s)");
         }
 
-        String location = SocketUtils.getLocationFromJsonFile(fileName);
+        String location = SocketUtils.getLocationFromJsonFile(fileName).toLowerCase();
 
         // Extract and verify token
         String token = SocketUtils.getTokenFromJsonFile(fileName);
