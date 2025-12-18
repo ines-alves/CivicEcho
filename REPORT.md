@@ -3,7 +3,7 @@
 ## 1. Introduction
 `CivicEcho` is a secure citizen reporting system designed to enable anonymous civic participation while maintaining report authenticity and integrity. The system addresses the critical challenge of allowing citizens to submit legitimate reports about civic issues to their municipalities while preserving their anonymity and preventing malicious actors from submitting false reports.
 
-The system operates within a distributed network environment and consists of five primary entities: an Authentication Server, which authenticates citizens and issues tokens that allow them to submit reports, Citizens, who can create and read reports, a Centralized Party, which acts as a trusted intermediary responsible for token verification and request forwarding, Municipalities, which process and respond to these requests; and a Database Server, which stores incoming reports and provides access to them.
+The system operates within a distributed network environment and consists of five primary entities: an Authentication Server, which authenticates citizens and issues tokens that allow them to submit reports, Citizens, who can create and read reports, a Centralized Party, which acts as a trusted intermediary responsible for token verification and request forwarding, Municipalities, which process and respond to these requests and a Database Server, which stores incoming reports and provides access to them.
 
 
 ![Business Scenario](img/businessScenario.png)
@@ -126,9 +126,67 @@ Key classes come from:
 
 #### 2.2.1. Network and Machine Setup
 
-(_Provide a brief description of the built infrastructure._)
+Our system is composed of citizens and 5 servers, divided into 3 subnetworks:
+***
+***192.168.0.0 subnet***
+
+This network is composed of citizens and the public servers: Centralized Party and Authentication Server on eth0. 
+
+These machines are connected to the vmnet2 on sw1 and they are all connected to the internet. 
+
+***
+***192.168.1.0 subnet***
+
+This network is composed of Municipalities, which are private servers, and is the connection point between the Centralized Party and the internal network.
+
+These machines are connected to the vmnet3 on sw2 and the Municipalities don't have access to the internet. 
+
+***
+***192.168.2.0 subnet***
+
+This network is composed of the Database, which is also part of the internal network, and is the connection point with the Municipality servers.
+
+These machines are connected to the vmnet4 on sw3 and the Database doesn't have access to the internet. 
+
+***
+***Firewall Rules***
+
+We implemented a DMZ in order to protect the internal network (Municipalities and Database) from network attacks.
+
+All systems implement a default-deny policy, meaning they block everything by default and then allow only specific, necessary traffic.
+
+Common rules:
+- All incoming, outgoing, and forwarded traffic is blocked by default
+- Allow all traffic on the local loopback interface
+- Allow traffic for already-established network connections
+- Block ssh
+- Block icmp
+- Block Telnet
+
+Centralized Party:
+- Accepts citizen connections on port 8090 from the 192.168.0.0/24 subnet via eth0
+- Allows outgoing connections to municipalities on port 8091 via eth1
+- Permits basic internet services: HTTP, DNS and NTP
+
+Municipality Servers:
+- Accepts connections from Centralized Party on port 8091 via eth0
+- Allows database connections to PostgreSQL on the database server via eth1
+
+Authentication Server:
+- Accepts citizen connections on port 8090 from the 192.168.0.0/24 subnet via eth0
+- Permits basic internet services: HTTP, DNS and NTP
+
+Database Server:
+- Accepts PostgreSQL connections from Lisbon and Porto municipality IPs (192.168.2.1 and 192.168.2.2)
+- Explicitly blocks all traffic from the Centralized Party
+
+***
+***Technologies used***
 
 (_Justify the choice of technologies for each server._)
+***
+***Machine Setup***
+
 
 ![Infrastructure Diagram](img/network.png)
 #### 2.2.2. Server Communication Security
