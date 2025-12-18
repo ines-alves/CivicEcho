@@ -3,20 +3,33 @@
 ## 1. Introduction
 `CivicEcho` is a secure citizen reporting system designed to enable anonymous civic participation while maintaining report authenticity and integrity. The system addresses the critical challenge of allowing citizens to submit legitimate reports about civic issues to their municipalities while preserving their anonymity and preventing malicious actors from submitting false reports.
 
-The system operates in a distributed network environment with three main entities: Citizens who generate reports, Municipalities that process and act upon these reports, and a Centralized Party that serves as a trusted intermediary for authentication and anonymization. Citizens connect from the 192.168.0.0 subnet, while municipalities operate from the 192.168.1.0 subnet, with the centralized party facilitating secure communication between them.
+The system operates within a distributed network environment and consists of five primary entities: an Authentication Server, which authenticates citizens and issues tokens that allow them to submit reports, Citizens, who can create and read reports, a Centralized Party, which acts as a trusted intermediary responsible for token verification and request forwarding, Municipalities, which process and respond to these requests; and a Database Server, which stores incoming reports and provides access to them.
 
-The core architecture implements a hybrid cryptographic approach combining symmetric encryption (AES-GCM) for efficient data protection, asymmetric encryption (RSA) for secure key exchange, and digital signatures for authentication. The secure document format encapsulates citizen reports with multiple layers of protection: confidentiality through hybrid encryption, integrity and freshness through GCM authentication tags, and authenticity through a two-phase digital signature process that preserves anonymity.
 
-To facilitate the process we have the following assumptions:
+![Business Scenario](img/businessScenario.png)
+### 1.1 Assumptions
+
 1. The public keys from the municipalities, centralized party, authentication server and database are well known.
 2. All private keys are private and are only accessed by the owner, although for simplicity they’re stored in the same directory.
 3. The certificates from the municipalities, centralized party, authentication server and database are predistributed and signed by the   authentication server.
 4. Valid citizens are already registered at the authentication server.
 5. Citizens can only query reports from their municipality.
+6. The Centralized Party, Authentication Server and Municipality perform all verifications correctly and cannot fail.
+7. Due to the anonymity of the reports in the application context, citizens can't perform delete or update operations, only read and create.
+8. All report related requests go through the Centralized Party before reaching Municipalities.
 
+### 1.2 Requirements
 
-
-![Business Scenario](img/businessScenario.png)
+1. Confidentiality: 
+- Centralized Party can't have access to the report contents
+- The distribution of certificates and tokens must be protected
+2. Anonymity - Reports can't be traced back to their author
+3. Integrity - Municipalities must verify that reports weren't altered
+4. Authentication:
+- Citizens must authenticate themselves through the Authentication Server before contacting the Centralized Party
+- Centralized Party must verify the authenticity of the citizen's token
+5. Freshness - Centralized Party must verify if the token has not been used before
+6. Non-Repudiation - If a report is in the database then it must be valid
 
 ## 2. Project Development
 
@@ -24,11 +37,22 @@ To facilitate the process we have the following assumptions:
 
 #### 2.1.1. Design
 
-Our cryptographic library secures citizen-generated reports in JSON format through four primary commands: protect, unprotect, check, ProtectSymmetric and UnprotectSymmetric . 
+Our cryptographic library secures citizen-generated reports in JSON format through four primary commands: protect, unprotect, check, ProtectSymmetric and UnprotectSymmetric. 
 To ensure confidentiality, integrity, and authenticity, before a report enters the network, the citizen must first protect it. 
-We employ a hybrid encryption scheme to achieve this efficiently. Since asymmetric encryption is inefficient for large messages, the process begins with the citizen generating a random unique symmetric key for AES in Galois Counter Mode (GCM), which provides `perfect future protection`. This key encrypts the report itself. The symmetric key is then encrypted using the public key of the intended municipality, ensuring that only the municipality with the corresponding private key can access it, thus guaranteeing `[SR1: confidentiality]`.
-The GCM mode inherently provides `[SR2: integrity]`. Any tampering with the ciphertext, even a single bit, results in a completely different authentication tag, which the municipality can detect during decryption, causing the message to be rejected. 
+***
+**Confidentiality:**
+
+We employ a hybrid encryption scheme to protect the report efficiently. Since asymmetric encryption is inefficient for large messages, the process begins with the citizen generating a random unique symmetric key for AES in Galois Counter Mode (GCM), which provides `perfect future protection`. This key encrypts the report itself. The symmetric key is then encrypted using the public key of the intended municipality, ensuring that only the municipality with the corresponding private key can access it, thus guaranteeing `[R1: confidentiality] and [R2: anonymity]`.
+***
+**Integrity:**
+
+The GCM mode inherently provides `[R3: integrity]`. Any tampering with the ciphertext, even a single bit, results in a completely different authentication tag, which the municipality can detect during decryption, causing the message to be rejected. 
+***
+**Read Operation:**
+
 When a citizen wants to read other citizen’s reports, they protect this request in the same way as when they create a new report. The centralized party forwards this request to the citizen’s municipality. Upon receiving the request, the municipality unprotects, stores the session key and queries the database for the number of reports requested. To guarantee that only the citizen can see the contents, the municipality encrypts the response with the session key.
+***
+**Protected Document Format:**
 
 The secure document format uses a JSON structure encoded in Base64:
 ```
@@ -44,7 +68,31 @@ The secure document format uses a JSON structure encoded in Base64:
     "key": "base64_rsa_encrypted_aes_key"
   }
 ```
+***
+**Report Format:**
 
+Create report request format:
+```
+  {
+    "report_id": "echo_00218",
+    "timestamp": "2025-10-05T14:30:00Z",
+    "category": "infrastructure",
+    "location": "Lisbon, Portugal",
+    "coordinates": {
+      "latitude": 38.72052,
+      "longitude": -9.14583
+    },
+    "description": "Broken traffic light on Avenida da Liberdade"
+  }
+```
+Read report request format:
+```
+  {
+    "content": "READ| num_reports | token",
+    "timestamp": "2025-10-05T14:30:00Z",
+    "location": "Lisbon, Portugal"
+  }
+```
 #### 2.1.2. Implementation
 The ProtectDocumentLibrary class provides these main operations:
   
@@ -85,9 +133,23 @@ Key classes come from:
 ![Infrastructure Diagram](img/network.png)
 #### 2.2.2. Server Communication Security
 
-To provide `authenticity`, the flow of communication ( citizen -> centralized party -> municipality -> database ) is implemented with TLS 1.3 secure sockets with client authentication and cipher suite TLS_AES_128_GCM_SHA256.
-To provide `authentication`, when the citizens join the application they must contact the authentication server first. They generate a certificate request that is sent to the authentication server alongside their citizen id and a signature. 
+All communications are implemented with TLS 1.3 secure sockets with cipher suite TLS_AES_128_GCM_SHA256.
+
+***
+**Confidentiality:**
+
+The flow of communication ( citizen <-> authentication server ) is implemented with TLS 1.3 secure sockets with only server authentication, since the client doesn't have its certificate yet. Since TLS provides encryption of the communication, we guarantee that the certificate and token exchange is confidential between citizen and authentication server, `[R1: confidentiality]`.
+***
+**Authentication:**
+
+To provide `[R4: authentication]`, when the citizens join the application they must contact the authentication server first. They generate a certificate request that is sent to the authentication server alongside their citizen id and a signature. 
 The authentication server has a map of registered citizens and verifies if the request is coming from a valid citizen. If proven valid, the server signs the certificate and sends it back to the citizen so that it can then establish a TLS connection with the centralized party that requires client authentication.
+
+The flow of communication ( citizen <-> centralized party <-> municipality <-> database ) is implemented with TLS 1.3 secure sockets with client and server authentication. This allows the centralized party to trust the citizen is valid if the certificate is signed by the authentication server and the municipality to verify the messages are comming from the centralized party. 
+***
+**Non-repudiation:**
+
+Together the centralized party authenticity verification, municipality report validation and TLS certificate verification provide `[R6: Non-repudiation]`, guaranteeing that if a report reaches the database it is valid.
 
 ### 2.3. Security Challenge
 
@@ -99,16 +161,39 @@ We chose to implement the Security Challenge B, which introduces these new requi
 - Authenticity of the tokens must be provided
 - Tokens must have a limited lifetime
 
-These requirements implied modifications in the authentication process and citizen - centralized party communication.
+These requirements implied modifications in the authentication process and citizen -> centralized party communication.
 
 
 #### 2.3.2. Attacker Model
 
-(_Define who is fully trusted, partially trusted, or untrusted._)
 
-(_Define how powerful the attacker is, with capabilities and limitations, i.e., what can he do and what he cannot do_)
+The Centralized Party, Municipalities, Authentication Server and Database are all fully trusted servers.
+The Citizens are untrusted entities that can misbehave in different ways.
+
+**Citizen as an attacker**
+***
+***SQL Injection***
+
+A malicious citizen may try to inject SQL code in the input fields of the report.
+
+In order to protect against that, the municipality performs sanitization of the report fields before before executing the database operations.
+***
+***DoS attack***
+
+A malicious citizen may try to overload the server.
+
+We block all ssh and icmp traffic on all servers.
+
+***
+***Eavesdropping***
+
+A malicious citizen may try to observe traffic between another citizen and the servers.
+
+We block Telnet in all servers to prevent traffic observation.
 
 #### 2.3.3. Solution Design and Implementation
+**Freshness:**
+
 Upon citizen authentication, the authentication server generates 10 write tokens and 1 non-expiring read token that have these corresponding formats:
 ```
 (random_256bitNumber : expiration_timestamp : citizen verified location) - token_signature
@@ -116,12 +201,13 @@ Upon citizen authentication, the authentication server generates 10 write tokens
 ```
 (random_256bitNumber : citizen verified location) - token_signature
 ```
+The token number is a random 256 bit number in order to have higher entropy and lower the probability of digest colisions.
+
 The server stores the timestamp of the token creation, so that it can control the frequency of token requests. These tokens are sent to the citizen alongside the signed certificate.
-In the context of the challenge, the citizen needs to send a different token per create request, to provide `freshness and avoid spam`. 
+In the context of the challenge, the citizen needs to send a different token per create request, to provide `[R5: freshness]` and avoid spam. 
 
 The centralized party, upon receiving a request, checks if this token is already in the list of used tokens.
 It then verifies the authenticity and integrity of the token, by checking if the signature was created by the authentication server, as well as if the location in the report matches the location in the token. 
-This way we provide `[SR1: confidentiality] and anonymity`, while maintaining the `[SR3: authentication]` requirement that only verified citizens can submit reports.
 
 For read operation the citizens must send the read token and the number of reports they wish to read from their municipality. This operation is validated by the municipality that verifies the authenticity of the token and the location in the token, meaning the permission to read from that municipality.
 

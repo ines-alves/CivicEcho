@@ -69,7 +69,14 @@ iface eth1 inet static
 EOF
 
 
-echo "Gateway Configuration:"
+echo "Centralized Party Configuration:"
 echo "eth0: 192.168.0.10 "
 echo "eth1: 192.168.1.254 "
 echo "eth2: Internet"
+
+cd ../utils/
+mvn clean install
+
+cd ../centralizedPartyApp/
+mvn clean install
+mvn compile exec:java

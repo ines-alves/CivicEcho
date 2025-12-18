@@ -62,3 +62,10 @@ EOF
 echo "Configuration:"
 echo "eth0: 192.168.0.20 "
 echo "eth2: Internet"
+
+cd ../utils/
+mvn clean install
+
+cd ../authenticationServerApp/
+mvn clean install
+mvn compile exec:java

@@ -28,10 +28,14 @@ iface lo inet loopback
 iface eth0 inet static
         address 192.168.0.101
         netmask 255.255.255.0
-        gateway 192.168.0.10
 EOF
 
 echo "Citizen2 Configuration:"
 echo "IP: 192.168.0.101"
-echo "Gateway: 192.168.0.10"
-echo "Test with: ping 192.168.0.10"
+
+cd ../utils/
+mvn clean install
+
+cd ../citizenApp/
+mvn clean install
+mvn compile exec:java -Dexec.args="citizen2"

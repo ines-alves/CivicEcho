@@ -34,6 +34,13 @@ iptables -F
 /sbin/iptables -A INPUT -i eth0 -p tcp --dport 5432 -s 192.168.2.2 -j ACCEPT
 /sbin/iptables -A INPUT -s 192.168.1.254 -j DROP # block incoming traffic from centralized party
 
+# ========== INTERNET ACCESS ==========
+/sbin/iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT      # HTTP
+/sbin/iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT     # HTTPS
+/sbin/iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT      # DNS TCP
+/sbin/iptables -A OUTPUT -p udp --dport 53 -j ACCEPT      # DNS UDP
+/sbin/iptables -A OUTPUT -p udp --dport 123 -j ACCEPT     # NTP
+
 systemctl restart NetworkManager
 systemctl enable NetworkManager
 systemctl start NetworkManager

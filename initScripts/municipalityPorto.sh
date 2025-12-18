@@ -38,6 +38,13 @@ iptables -F
 /sbin/iptables -A INPUT -i eth0 -p tcp --dport 8091 -s 192.168.1.254 -j ACCEPT  # allow incoming traffic on eth0 only from centralized party
 /sbin/iptables -A OUTPUT -o eth1 -p tcp --dport 5432 -d 192.168.2.100 -j ACCEPT # allow outgoing traffic on eth1 only to database
 
+# ========== INTERNET ACCESS ==========
+/sbin/iptables -A OUTPUT -p tcp --dport 80 -j ACCEPT      # HTTP
+/sbin/iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT     # HTTPS
+/sbin/iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT      # DNS TCP
+/sbin/iptables -A OUTPUT -p udp --dport 53 -j ACCEPT      # DNS UDP
+/sbin/iptables -A OUTPUT -p udp --dport 123 -j ACCEPT     # NTP
+
 iptables-save > /etc/iptables/rules.v4
 
 echo "Saved firewall rules"
@@ -68,5 +75,14 @@ EOF
 echo "Porto Municipality Configuration:"
 echo "eth0: 192.168.1.2 (to Centralized Party)"
 echo "eth1: 192.168.2.2 (to Database)"
-echo "Gateway: 192.168.1.254 "
-echo "Test: ping 192.168.1.254 and ping 192.168.2.100"
+
+cd ../utils/
+mvn clean install
+
+cd ../municipalityApp/
+mvn clean install
+mvn compile
+
+ifconfig eth2 down
+
+mvn exec:java -Dexec.args="porto"
