@@ -15,7 +15,32 @@ ifconfig eth0 192.168.1.2/24 up
 
 ifconfig eth1 192.168.2.2/24 up
 
-ip route add default via 192.168.1.254
+iptables -F
+
+/sbin/iptables -P INPUT DROP
+/sbin/iptables -P FORWARD DROP
+/sbin/iptables -P OUTPUT DROP
+
+/sbin/iptables -A INPUT -i lo -j ACCEPT
+/sbin/iptables -A OUTPUT -o lo -j ACCEPT
+
+/sbin/iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow incoming traffic for established connections
+/sbin/iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow outgoing traffic for established connections
+
+# ========== BLOCKING RULES ==========
+/sbin/iptables -A INPUT -p tcp --dport 22 -j DROP      # SSH
+/sbin/iptables -A OUTPUT -p tcp --dport 22 -j DROP     # SSH
+/sbin/iptables -A INPUT -p icmp -j DROP                # ICMP
+/sbin/iptables -A OUTPUT -p icmp -j DROP               # ICMP
+/sbin/iptables -A INPUT -p tcp --dport 23 -j DROP      # Telnet
+
+# ========== MUNICIPALITY APPLICATION RULES ==========
+/sbin/iptables -A INPUT -i eth0 -p tcp --dport 8091 -s 192.168.1.254 -j ACCEPT  # allow incoming traffic on eth0 only from centralized party
+/sbin/iptables -A OUTPUT -o eth1 -p tcp --dport 5432 -d 192.168.2.100 -j ACCEPT # allow outgoing traffic on eth1 only to database
+
+iptables-save > /etc/iptables/rules.v4
+
+echo "Saved firewall rules"
 
 systemctl restart NetworkManager
 systemctl enable NetworkManager
@@ -38,6 +63,7 @@ iface eth1 inet static
         address 192.168.2.2
         netmask 255.255.255.0
 EOF
+
 
 echo "Porto Municipality Configuration:"
 echo "eth0: 192.168.1.2 (to Centralized Party)"

@@ -10,6 +10,30 @@ apt install -y telnet
 
 ifconfig eth0 192.168.2.100/24 up
 
+iptables -F
+
+/sbin/iptables -P INPUT DROP
+/sbin/iptables -P FORWARD DROP
+/sbin/iptables -P OUTPUT DROP
+
+/sbin/iptables -A INPUT -i lo -j ACCEPT
+/sbin/iptables -A OUTPUT -o lo -j ACCEPT
+
+/sbin/iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow incoming traffic for established connections
+/sbin/iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow outgoing traffic for established connections
+
+# ========== BLOCKING RULES ==========
+/sbin/iptables -A INPUT -p tcp --dport 22 -j DROP      # SSH
+/sbin/iptables -A OUTPUT -p tcp --dport 22 -j DROP     # SSH
+/sbin/iptables -A INPUT -p icmp -j DROP                # ICMP
+/sbin/iptables -A OUTPUT -p icmp -j DROP               # ICMP
+/sbin/iptables -A INPUT -p tcp --dport 23 -j DROP      # Telnet
+
+# ========== DATABASE APPLICATION RULES ==========
+/sbin/iptables -A INPUT -i eth0 -p tcp --dport 5432 -s 192.168.2.1 -j ACCEPT # allow incoming traffic on eth0 only from Lisbon and Porto municipalities
+/sbin/iptables -A INPUT -i eth0 -p tcp --dport 5432 -s 192.168.2.2 -j ACCEPT
+/sbin/iptables -A INPUT -s 192.168.1.254 -j DROP # block incoming traffic from centralized party
+
 systemctl restart NetworkManager
 systemctl enable NetworkManager
 systemctl start NetworkManager
