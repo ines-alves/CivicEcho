@@ -3,6 +3,7 @@ package service;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.sql.*;
+import log.AuditFile;
 
 public class DatabaseService {
     private final String dbUrl;
@@ -82,9 +83,11 @@ public class DatabaseService {
         if (isAllReports) {
             sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE location = ? ORDER BY created_at DESC";
             System.out.println("Fetching ALL reports for location: " + location);
+            AuditFile.municipalitySqlQuery("SELECT report_id, location, report_data, created_at FROM reports WHERE location = '" + location + "' ORDER BY created_at DESC");
         } else {
             sql = "SELECT report_id, location, report_data, created_at FROM reports WHERE location = ? ORDER BY created_at DESC LIMIT ?";
             System.out.println("Fetching " + numberOfReports + " most recent reports for location: " + location);
+            AuditFile.municipalitySqlQuery("SELECT report_id, location, report_data, created_at FROM reports WHERE location = '" + location + "' ORDER BY created_at DESC LIMIT " + numberOfReports);
         }
 
         JsonObject response = new JsonObject();

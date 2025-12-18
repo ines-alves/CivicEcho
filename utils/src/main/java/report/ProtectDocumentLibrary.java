@@ -22,6 +22,8 @@ import com.google.gson.JsonObject;
 import keys.AESKeyGenerator;
 import keys.RSAKeyGenerator;
 
+import log.AuditFile;
+
 
 public class ProtectDocumentLibrary {
     final String SYMMETRIC_CIPHER_ALGO = "AES/GCM/NoPadding";
@@ -231,6 +233,7 @@ public class ProtectDocumentLibrary {
             // Verify token signature
             boolean isVerified = verifySignature(tokenBytes, signatureBytes, authServerPublicKeyPath);
             if (!isVerified) {
+                AuditFile.centralizedValidatesToken("Signature verification FAILED");
                 return false;
             }
 
@@ -247,21 +250,25 @@ public class ProtectDocumentLibrary {
                 long expirationTimestamp = Long.parseLong(tokenParts[1]);
                 long currentTimestamp = System.currentTimeMillis();
                 if(currentTimestamp > expirationTimestamp) {
+                    AuditFile.centralizedValidatesToken("Token EXPIRED");
                     return false;
                 }
                 if(!tokenParts[2].equalsIgnoreCase(location)) {
+                    AuditFile.centralizedValidatesToken("Location verification FAILED");
                     return false;
                 }
             } else if (tokenParts.length == 2) {
                 // READ token: only verify location (no expiration)
                 if(!tokenParts[1].equalsIgnoreCase(location)) {
+                    AuditFile.centralizedValidatesToken("Location verification FAILED (read)");
                     return false;
                 }
             } else {
                 // Invalid token format
                 return false;
             }
-
+            
+            AuditFile.centralizedValidatesToken("VERIFIED");
             return true;
         }
     }

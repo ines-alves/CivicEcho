@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -19,6 +22,7 @@ import report.ProtectDocumentLibrary;
 import info.MunicipalityInfo;
 import sockets.SocketUtils;
 import token.TokenManager;
+import log.AuditFile;
 
 
 public class CentralizedParty {
@@ -110,6 +114,7 @@ public class CentralizedParty {
     }
     
     private static String connectToMunicipalityAndForward(String fileName) throws Exception {
+        AuditFile.municipalityReceivesProtected(Files.readString(Paths.get(fileName)));  
 
         // Cleanup expired tokens on every request
         int removed = tokenManager.cleanupExpiredTokens();//FIXME maybe do this periodicaly
@@ -122,6 +127,7 @@ public class CentralizedParty {
         // Extract and verify token
         String token = SocketUtils.getTokenFromJsonFile(fileName);
         if (tokenManager.verifyUsedToken(token)) {
+            AuditFile.centralizedValidatesToken("ALREADY USED");
             System.err.println("USED TOKEN: " + token);
             return "ERROR: token already used";
         }
@@ -151,11 +157,15 @@ public class CentralizedParty {
             socket.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             socket.setEnabledProtocols(new String[] { "TLSv1.3" });
             
+            AuditFile.centralizedFowarding(Files.readString(Paths.get(fileName)), "MUNICIPALITY");
+
             SocketUtils.prepareAndWriteJsonFileToSocket(socket, fileName);
             System.out.println("Sent JSON file name to municipality: " + fileName);
             String serverResponse = SocketUtils.readFromSocket(socket);
             System.out.println("Received response from municipality: " + serverResponse);
             
+            AuditFile.centralizedFowarding(serverResponse, "CITIZEN");
+
             return serverResponse;
             
         } catch (IOException e) {

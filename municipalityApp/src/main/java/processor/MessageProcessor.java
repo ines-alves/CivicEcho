@@ -6,6 +6,10 @@ import report.ProtectDocumentLibrary;
 import service.DatabaseService;
 import sockets.SocketUtils;
 import java.io.FileReader;
+import log.AuditFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class MessageProcessor {
     private final ProtectDocumentLibrary documentLibrary;
@@ -30,7 +34,9 @@ public class MessageProcessor {
             System.out.println("Location extracted: " + location);
             System.out.println("Operation extracted: " + operation);
 
+            AuditFile.municipalityReceivesProtected(Files.readString(Path.of(secureDocumentJson)));
             documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, municipalityPrivateKeyPath);
+            AuditFile.municipalityDeciphersJson(Files.readString(Path.of(tempDecryptedFile)));
 
             System.out.println("Document successfully decrypted using utils methods");
             System.out.println("Decrypted content: " + tempDecryptedFile);
@@ -45,6 +51,7 @@ public class MessageProcessor {
             // Process based on operation type
             if ("CREATE".equalsIgnoreCase(operation)) {
                 String result = databaseService.createReport(decryptedJson);
+                AuditFile.municipalityCreateResponse(result);
                 return "SUCCESS: Document processed for " + location + " with operation " + operation + " - " + result;
             } else if ("READ".equalsIgnoreCase(operation)) {
                 System.out.println("=== PROCESSING READ REQUEST ===");
@@ -85,6 +92,8 @@ public class MessageProcessor {
                 // Query database for reports filtered by location
                 JsonObject reportsJson = databaseService.getReports(numberOfReports, location);
 
+                AuditFile.municipalityReadResponse(reportsJson.toString());
+
                 // Create temporary files for encryption
                 String tempReportsFile = "temp_reports_" + System.currentTimeMillis() + ".json";
                 String tempEncryptedFile = "temp_encrypted_" + System.currentTimeMillis() + ".json";
@@ -98,6 +107,7 @@ public class MessageProcessor {
                     // Encrypt reports using the extracted symmetric key
                     documentLibrary.ProtectSymmetric(tempReportsFile, tempEncryptedFile, extractedSymmetricKeyPath);
 
+                    AuditFile.municipalityProtectedResponse(Files.readString(Path.of(tempEncryptedFile)));
                     System.out.println("Reports encrypted successfully");
 
                     // Read encrypted file content to return
