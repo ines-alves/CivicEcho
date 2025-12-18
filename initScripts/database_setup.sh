@@ -103,8 +103,9 @@ BEGIN
 END
 $do$;
 
-GRANT ALL PRIVILEGES ON DATABASE municipality TO municipality_user;
-GRANT ALL PRIVILEGES ON SCHEMA public TO municipality_user;
+GRANT CONNECT ON DATABASE municipality TO municipality_user;
+REVOKE ALL ON SCHEMA public FROM municipality_user;
+GRANT USAGE ON SCHEMA public TO municipality_user;
 EOF
 
 echo "Creating reports table..."
@@ -118,9 +119,8 @@ CREATE TABLE reports (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-GRANT ALL PRIVILEGES ON TABLE reports TO municipality_user;
-GRANT ALL PRIVILEGES ON SCHEMA public TO municipality_user;
-GRANT USAGE ON SCHEMA public TO municipality_user;
+REVOKE ALL PRIVILEGES ON TABLE reports FROM municipality_user;
+GRANT SELECT, INSERT ON TABLE reports TO municipality_user;
 EOF
 
 echo "Verifying database setup..."
