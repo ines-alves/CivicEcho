@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 
 public class AuditFile {
 
-    private static final String AUDIT_FILE_PATH = "audit.log";
+    private static final String AUDIT_FILE_PATH = "../audit.log";
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 

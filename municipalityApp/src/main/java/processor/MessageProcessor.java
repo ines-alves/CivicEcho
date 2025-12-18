@@ -2,14 +2,20 @@ package processor;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+
 import report.ProtectDocumentLibrary;
 import service.DatabaseService;
 import sockets.SocketUtils;
+
 import java.io.FileReader;
+
 import log.AuditFile;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import com.google.gson.GsonBuilder;
 
 public class MessageProcessor {
     private final ProtectDocumentLibrary documentLibrary;
@@ -92,17 +98,18 @@ public class MessageProcessor {
                 // Query database for reports filtered by location
                 JsonObject reportsJson = databaseService.getReports(numberOfReports, location);
 
-                AuditFile.municipalityReadResponse(reportsJson.toString());
-
+                
                 // Create temporary files for encryption
                 String tempReportsFile = "temp_reports_" + System.currentTimeMillis() + ".json";
                 String tempEncryptedFile = "temp_encrypted_" + System.currentTimeMillis() + ".json";
-
+                
                 try {
                     // Write reports to temporary file
                     try (java.io.FileWriter writer = new java.io.FileWriter(tempReportsFile)) {
                         gson.toJson(reportsJson, writer);
                     }
+                    Gson gson2 = new GsonBuilder().setPrettyPrinting().create();
+                    AuditFile.municipalityReadResponse(gson2.toJson(reportsJson));
 
                     // Encrypt reports using the extracted symmetric key
                     documentLibrary.ProtectSymmetric(tempReportsFile, tempEncryptedFile, extractedSymmetricKeyPath);

@@ -31,10 +31,10 @@ public class ReportService {
             TokenManager tokenManager = TokenManager.getInstance();
             String location = tokenManager.getWriteTokenLocation(token).toLowerCase();
             
-            AuditFile.clientUnprotectedCreate(report.toPrettyJson().toString());
-            
             String fileName = TEMP_FILE_DIR + report.getReportId() + ".json";
             String protectedFileName = TEMP_FILE_DIR + "protected_" + report.getReportId() + ".json";
+            
+            AuditFile.clientUnprotectedCreate(Files.readString(Path.of(fileName)));
 
             protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, "../certificates/municipalities/" + location + "/" + location + ".pubkey", "CREATE", token);
 
@@ -72,7 +72,7 @@ public class ReportService {
             String outputFileName = TEMP_FILE_DIR + "readRequest" + "_output" + ".json";
             String unprotectedFileName = TEMP_FILE_DIR + "unprotected_" + "readRequest" + "_output" + ".json";
 
-            AuditFile.clientUnprotectedRead(Files.readString(Path.of(unprotectedFileName)));
+            AuditFile.clientUnprotectedRead(Files.readString(Path.of(fileName)));
 
             protectDocumentLibrary.protect(fileName, protectedFileName, SYMMETRIC_KEY_PATH, "../certificates/municipalities/" + location + "/" + location + ".pubkey", "READ", token);
 

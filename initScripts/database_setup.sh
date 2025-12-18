@@ -135,3 +135,4 @@ sudo -u postgres psql -p 5432 -c "\du" | grep municipality_user
 sudo -u postgres psql -p 5432 -d municipality -c "\dt" | grep reports
 
 sudo systemctl enable postgresql
+ifconfig eth1 down

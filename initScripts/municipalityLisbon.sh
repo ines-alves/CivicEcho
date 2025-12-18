@@ -85,3 +85,5 @@ mvn compile
 
 ifconfig eth2 down
 mvn exec:java -Dexec.args="lisbon"
+
+ifconfig eth2 up
