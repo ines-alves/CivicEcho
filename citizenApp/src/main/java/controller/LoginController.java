@@ -21,11 +21,6 @@ public class LoginController {
                 return null;
             }
 
-            //if (!citizenID.matches("\\d{6}")) {
-                //System.out.println("\nCitizen ID must be a six digit integer");
-                //continue;
-            //}
-
             boolean authenticated = LoginService.sendLogin(socket, citizenID);
             
             if (authenticated) {
@@ -38,6 +33,7 @@ public class LoginController {
                     return null;
                 }
                 System.out.println("\nLogin failed, please try again.");
+                System.out.println("For now the only Citizen IDs supported are \"citizen1\" and \"citizen2\".");
             }
         }
     }

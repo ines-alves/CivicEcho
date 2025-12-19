@@ -72,7 +72,7 @@ public class ReportBuilder {
 
             switch (op) {
                 case "s":
-                    System.out.println("\nReport saved successfully.");
+                    System.out.println("\nSending Report.");
                     return true;
 
                 case "e":

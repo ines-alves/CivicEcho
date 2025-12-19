@@ -41,7 +41,6 @@ public class TokenManager {
             if (currentTimestamp > entry.getValue()) {
                 writeTokens.remove(entry.getKey());
                 removedCount++;
-                System.out.println("Cleanup: Removed expired WRITE token: " + entry.getKey());
             }
         }
 

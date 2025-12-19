@@ -36,8 +36,6 @@ public class TokenRequestHandler {
             String signatureBase64 = parts[2];
             byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64);
             
-            System.out.println("[TokenRequest] Processing request for: " + citizenID);
-            
             if (tokenManager.getCitizenPublicKey(citizenID) == null) {
                 return "ERROR|Unauthorized client: " + citizenID;
             }
@@ -51,11 +49,11 @@ public class TokenRequestHandler {
             String tokens = tokenManager.requestTokens(citizenID, false);
  
             if (tokens == null) {
-                System.out.println("TOO SOON SINCE LAST REQUEST");//debug
+                System.out.println("[TokenRequest] Client " + citizenID + " too soon since last request");
                 return "ERROR|Too soon since last request"; 
             }
- 
-            System.out.println("THESE ARE THE TOKENS " + tokens);
+
+            System.out.println("[TokenRequest] Client " + citizenID + " successfully sending tokens");
             
             return "SUCCESS" + tokens;
             

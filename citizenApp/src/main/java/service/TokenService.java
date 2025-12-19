@@ -32,7 +32,7 @@ public class TokenService {
             
             String status = parts[0];
 
-            System.out.println("Received response from server: " + status);//DEBUG
+            System.out.println("Received response from server: " + status);
 
             if (status.equals("ERROR")) {
                 System.out.println("Token request failed: " + parts[1]);
@@ -40,11 +40,12 @@ public class TokenService {
             }
 
             TokenManager tokenManager = TokenManager.getInstance();
+            /* Good for seeing the tokens
             for (int i = 1; i < parts.length; i++) {
                 System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
                 tokenManager.addToken(parts[i]);
             }
-            
+            */
             return true;
 
         } catch (Exception e) {

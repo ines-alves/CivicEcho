@@ -22,7 +22,7 @@ public class DatabaseService {
     }
 
     public String createReport(JsonObject report) {
-        System.out.println("=== CREATE REPORT DEBUG ===");
+        System.out.println("=== CREATE REPORT ===");
         String sql = "INSERT INTO reports (report_id, location, report_data) VALUES (?, ?, ?::jsonb)";
 
         try (Connection conn = getConnection();
@@ -31,15 +31,11 @@ public class DatabaseService {
             String location = report.get("location").getAsString();
             String reportId = report.get("report_id").getAsString();
 
-            System.out.println("Report ID: " + reportId);
-            System.out.println("Location: " + location);
-            System.out.println("Connecting to PostgreSQL database...");
-
             stmt.setString(1, reportId);
             stmt.setString(2, location);
             stmt.setString(3, report.toString());
 
-            System.out.println("Executing SQL INSERT...");
+            System.out.println("Sending SQL INSERT...");
             stmt.executeUpdate();
             System.out.println("Report stored in PostgreSQL successfully!");
 
@@ -74,9 +70,6 @@ public class DatabaseService {
     }
 
     public JsonObject getReports(int numberOfReports, String location) {
-        System.out.println("=== GET MULTIPLE REPORTS DEBUG ===");
-        System.out.println("Filtering by location: " + location);
-
         String sql;
         boolean isAllReports = (numberOfReports == -1);
 
@@ -104,7 +97,6 @@ public class DatabaseService {
                 stmt.setInt(2, numberOfReports);
             }
 
-            System.out.println("Executing SQL SELECT...");
             ResultSet rs = stmt.executeQuery();
 
             com.google.gson.JsonArray reportsArray = new com.google.gson.JsonArray();
@@ -120,10 +112,9 @@ public class DatabaseService {
                 reportsArray.add(report);
                 count++;
 
-                System.out.println("Report " + count + ": " + rs.getString("report_id"));
             }
 
-            System.out.println("Total reports retrieved: " + count);
+            System.out.println("Sending " + count + " reports");
 
             response.addProperty("status", "SUCCESS");
             response.addProperty("count", count);

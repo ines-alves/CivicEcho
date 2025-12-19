@@ -37,10 +37,8 @@ public class LoginService {
             
             String autentication = parts[0];
 
-            System.out.println("Received response from server: " + autentication);//DEBUG
-
             if (autentication.equals("ERROR")) {
-                System.out.println("authentication failed: ") ;
+                System.out.println("Authentication failed: " + response);
                 return false;
             }
 
@@ -79,11 +77,13 @@ public class LoginService {
             String readToken = parts[2];
             tokenManager.setReadToken(readToken);
 
+            /* Good for seeing the tokens
             for (int i = 3; i < parts.length; i++) {
                 System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
                 tokenManager.addToken(parts[i]);
             }
-            
+            */
+
             return true;
 
         } catch (Exception e) {

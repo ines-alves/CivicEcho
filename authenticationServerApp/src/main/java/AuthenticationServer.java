@@ -36,13 +36,14 @@ public class AuthenticationServer {
             while (true) {
                 try {
                     Socket clientSocket = listener.accept();
-                    System.out.println("New enrollment request from: " +  clientSocket.getInetAddress().getHostAddress());
                     threadPool.submit(() -> {
                         try {
                             String request = SocketUtils.readFromSocket(clientSocket);
                             if (request.startsWith("LOGIN|")) {
+                                System.out.println("New login request from: " +  clientSocket.getInetAddress().getHostAddress());
                                 enrollmentHandler.handleEnrollmentRequest(clientSocket, request);
                             } else if (request.startsWith("TOKEN|")) {
+                                System.out.println("New token request from: " +  clientSocket.getInetAddress().getHostAddress());
                                 tokenRequestHandler.handleTokenRequest(clientSocket, request);
                             } else {
                                 SocketUtils.writeToSocket(clientSocket, "ERROR|Unknown request type");

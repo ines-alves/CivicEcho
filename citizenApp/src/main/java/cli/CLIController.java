@@ -137,9 +137,7 @@ public class CLIController {
     }
     
     private void updateSSLSocketFactoryWithCertificate() {
-        try {
-            System.out.println("\n=== Updating SSL Factory with citizen certificate ===");
-            
+        try {    
             String keyStorePath = "citizens/" + citizenID + "/" + citizenID + ".p12";
             String keyStorePassword = "changeme";
             String trustStorePath = "citizens/" + citizenID + "/truststore.jks";
@@ -157,9 +155,6 @@ public class CLIController {
                 System.err.println("ERROR: TrustStore not found: " + trustStorePath);
                 return;
             }
-            
-            System.out.println("KeyStore exists: " + keyStoreFile.length() + " bytes");
-            System.out.println("TrustStore exists: " + trustStoreFile.length() + " bytes");
             
             // Load keystore (citizen's certificate)
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
@@ -183,8 +178,6 @@ public class CLIController {
             
             // Update the factory
             this.sslSocketFactory = sslContext.getSocketFactory();
-            
-            System.out.println("SSL Factory updated with citizen certificate");
             
         } catch (Exception e) {
             System.err.println("ERROR: Failed to update SSL Factory: " + e.getMessage());

@@ -51,8 +51,6 @@ public class EnrollmentHandler {
             byte[] signatureBytes = Base64.getDecoder().decode(signatureBase64);
             byte[] csrBytes = Base64.getDecoder().decode(csr);
             
-            System.out.println("[Enrollment] Processing request for: " + citizenID);
-            
             // 1. Check if client is authorized
             if (tokenManager.getCitizenPublicKey(citizenID) == null) {
                 return "ERROR|Unauthorized client: " + citizenID;
@@ -84,8 +82,6 @@ public class EnrollmentHandler {
                 return "ERROR|too many logins"; // Can happend if a cient disconects and login again.
             }
 
-            System.out.println("THESE ARE THE TOKENS " + tokens);
-
             return "SUCCESS|" + certificateBase64 + tokens;
             
         } catch (Exception e) {
@@ -101,7 +97,6 @@ public class EnrollmentHandler {
         byte[] csrBytes = Base64.getDecoder().decode(csr);
         Files.write(Paths.get(filename), csrBytes);
         
-        System.out.println("[Enrollment] CSR saved to: " + filename);
         return filename;
     }
 
@@ -144,7 +139,6 @@ public class EnrollmentHandler {
             int exitCode = process.waitFor();
             
             if (exitCode == 0) {
-                System.out.println("[Enrollment] Script output: " + output.toString());
                 return outputFile;
             } else {
                 System.err.println("[Enrollment] Script failed with code " + exitCode);

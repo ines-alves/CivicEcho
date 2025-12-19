@@ -236,4 +236,3 @@ cd ../..
 echo ""
 echo "=== All certificates, keys, trust stores, and PKCS#12 files generated successfully! ==="
 echo ""
-echo "=== Each entity now has: ==="

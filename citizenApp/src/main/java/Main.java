@@ -28,10 +28,9 @@ public class Main {
 
             int exitCode = process.waitFor();
             
-            if (exitCode == 0) {
-                System.out.println("[Enrollment] Script ended successfully");
-            } else {
-                System.err.println("[Enrollment] Script failed with code " + exitCode);
+            if (exitCode != 0) {
+                System.out.println("generate-citizen-csr.sh script failed with code " + exitCode);
+                return;
             }
         } catch (Exception e) {
             System.err.println("Application interrupted: " + e.getMessage());

@@ -29,10 +29,7 @@ public class Main {
         System.setProperty("javax.net.ssl.trustStore", truststorePath);
         System.setProperty("javax.net.ssl.trustStorePassword", "changeme");
 
-        System.out.println("Municipality App Started - " + municipality);
-
-        int port = 8091; // Same port for all municipalities since they run on different VMs
-        System.out.println("Starting " + municipality + " municipality server on port " + port + "...");
+        int port = 8091;
         MunicipalityApp.startMunicipalityServer(port, municipality);
     }
 }

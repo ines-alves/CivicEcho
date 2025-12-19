@@ -37,9 +37,6 @@ public class MessageProcessor {
             String location = SocketUtils.getLocationFromJsonFile(secureDocumentJson);
             String operation = SocketUtils.getOperationFromJsonFile(secureDocumentJson);
 
-            System.out.println("Location extracted: " + location);
-            System.out.println("Operation extracted: " + operation);
-
             AuditFile.municipalityReceivesProtected(Files.readString(Path.of(secureDocumentJson)));
             try {
             documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, municipalityPrivateKeyPath);
@@ -48,9 +45,6 @@ public class MessageProcessor {
                 return "ERROR: Unprotect failed " + e.getMessage();
             }
             AuditFile.municipalityUnprotectedJson(Files.readString(Path.of(tempDecryptedFile)));
-
-            System.out.println("Document successfully decrypted using utils methods");
-            System.out.println("Decrypted content: " + tempDecryptedFile);
 
             // Read the decrypted JSON file
             Gson gson = new Gson();
@@ -70,11 +64,9 @@ public class MessageProcessor {
                 // Extract the symmetric key for encrypting the response
                 String extractedSymmetricKeyPath = "temp_read_key_" + System.currentTimeMillis() + ".key";
                 documentLibrary.extractSymmetricKeyToPath(secureDocumentJson, municipalityPrivateKeyPath, extractedSymmetricKeyPath);
-                System.out.println("Extracted symmetric key to: " + extractedSymmetricKeyPath);
 
                 // Extract the raw request from decrypted content (should be "READ|numberOfReports|token")
                 String rawRequest = decryptedJson.get("content").getAsString();
-                System.out.println("Raw request: " + rawRequest);
 
                 // Parse the request: "READ|numberOfReports|token"
                 String[] parts = rawRequest.split("\\|");
@@ -84,9 +76,6 @@ public class MessageProcessor {
 
                 String numberOfReportsStr = parts[1];
                 String token = parts[2];
-
-                System.out.println("Number of reports requested: " + numberOfReportsStr);
-                System.out.println("Token: " + token);
 
                 // Parse numberOfReports - support "ALL" or numeric value
                 int numberOfReports;
@@ -120,7 +109,6 @@ public class MessageProcessor {
                     documentLibrary.ProtectSymmetric(tempReportsFile, tempEncryptedFile, extractedSymmetricKeyPath);
 
                     AuditFile.municipalityProtectedResponse(Files.readString(Path.of(tempEncryptedFile)));
-                    System.out.println("Reports encrypted successfully");
 
                     // Read encrypted file content to return
                     String encryptedContent;
@@ -152,7 +140,6 @@ public class MessageProcessor {
         for (String filename : filenames) {
             try {
                 java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(filename));
-                System.out.println("Cleaned up temporary file: " + filename);
             } catch (Exception e) {
                 System.err.println("Failed to cleanup file " + filename + ": " + e.getMessage());
             }

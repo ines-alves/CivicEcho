@@ -96,7 +96,7 @@ public class ReportService {
                 ReportStorage.deleteFile(SYMMETRIC_KEY_PATH);
                 return;
             }
-            
+
             AuditFile.clientUnprotectedReadResponse(Files.readString(Path.of(unprotectedFileName)));
 
             ReportPrinter.printReportsFromFile(unprotectedFileName);

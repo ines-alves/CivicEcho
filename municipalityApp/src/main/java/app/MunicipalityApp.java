@@ -33,7 +33,7 @@ public class MunicipalityApp {
             listener.setNeedClientAuth(true);
             listener.setEnabledCipherSuites(new String[] { "TLS_AES_128_GCM_SHA256" });
             listener.setEnabledProtocols(new String[] { "TLSv1.3" });
-            System.out.println("Municipality server listening on port " + port + "...");
+            System.out.println("Municipality " + municipality + " server listening on port " + port + "...");
 
             while (true) {  // Add loop to accept multiple connections
                 try (Socket clientSocket = listener.accept()) {
@@ -42,9 +42,9 @@ public class MunicipalityApp {
                         System.out.println("Client certificate verification failed. Closing connection.");
                         continue;
                     }
-                    System.out.println("New CentralizedParty connected from: " + clientSocket.getInetAddress().getHostAddress());
+                    System.out.println("CentralizedParty connected from: " + clientSocket.getInetAddress().getHostAddress());
                     handleCentralizedPartyRequest(clientSocket);
-                    System.out.println("CentralizedParty disconnected from: " + clientSocket.getInetAddress().getHostAddress());
+                    System.out.println("Response sent to CentralizedParty.");
                 } catch (Exception e) {
                     System.err.println("Error handling centralized party request: " + e.getMessage());
                     e.printStackTrace();
@@ -62,10 +62,8 @@ public class MunicipalityApp {
 
             // Read secure document from centralized party using utils
             SocketUtils.readSocketToJsonFile(clientSocket,tempProcessedFile);
-            System.out.println("Received secure document from centralized party");
             String processingResult = processor.processSecureDocument(tempProcessedFile);
             SocketUtils.writeToSocket(clientSocket, processingResult);
-            System.out.printf("Sent response to client%n");
 
         } catch (IOException e) {
             System.err.println("Communication error: " + e.getMessage());
