@@ -10,7 +10,7 @@ public class AuditFile {
 
     private static final String AUDIT_FILE_PATH = "../audit.log";
     private static final DateTimeFormatter TIME_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
     private static final Object LOCK = new Object();
 
@@ -50,8 +50,8 @@ public class AuditFile {
         log("MUNICIPALITY", "RECEIVED PROTECTED JSON", protectedJson);
     }
 
-    public static void municipalityDeciphersJson(String json) {
-        log("MUNICIPALITY", "DECIPHERED JSON", json);
+    public static void municipalityUnprotectedJson(String json) {
+        log("MUNICIPALITY", "UNPROTECTED JSON", json);
     }
 
     public static void municipalitySqlQuery(String query) {

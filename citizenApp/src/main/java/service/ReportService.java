@@ -84,8 +84,19 @@ public class ReportService {
             
             AuditFile.clientProtectedReadResponse(Files.readString(Path.of(outputFileName)));
 
-            protectDocumentLibrary.UnprotectSymmetric(outputFileName, unprotectedFileName, SYMMETRIC_KEY_PATH);
-
+            try {
+                protectDocumentLibrary.UnprotectSymmetric(outputFileName, unprotectedFileName, SYMMETRIC_KEY_PATH);
+            } catch (Exception e) {
+                AuditFile.clientUnprotectedReadResponse("FAILED " + e.getMessage());
+                System.err.println("ERROR: Unprotect failed " + e.getMessage());
+                ReportStorage.deleteFile(fileName);
+                ReportStorage.deleteFile(protectedFileName);
+                ReportStorage.deleteFile(outputFileName);
+                ReportStorage.deleteFile(unprotectedFileName);
+                ReportStorage.deleteFile(SYMMETRIC_KEY_PATH);
+                return;
+            }
+            
             AuditFile.clientUnprotectedReadResponse(Files.readString(Path.of(unprotectedFileName)));
 
             ReportPrinter.printReportsFromFile(unprotectedFileName);

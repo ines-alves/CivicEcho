@@ -41,8 +41,13 @@ public class MessageProcessor {
             System.out.println("Operation extracted: " + operation);
 
             AuditFile.municipalityReceivesProtected(Files.readString(Path.of(secureDocumentJson)));
+            try {
             documentLibrary.unprotect(secureDocumentJson, tempDecryptedFile, municipalityPrivateKeyPath);
-            AuditFile.municipalityDeciphersJson(Files.readString(Path.of(tempDecryptedFile)));
+            } catch (Exception e) {
+                AuditFile.municipalityUnprotectedJson("FAILED " + e.getMessage());
+                return "ERROR: Unprotect failed " + e.getMessage();
+            }
+            AuditFile.municipalityUnprotectedJson(Files.readString(Path.of(tempDecryptedFile)));
 
             System.out.println("Document successfully decrypted using utils methods");
             System.out.println("Decrypted content: " + tempDecryptedFile);
