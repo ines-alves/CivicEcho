@@ -32,7 +32,7 @@ The system operates within a distributed network environment and consists of fiv
 4. Authentication:
 - Citizens must authenticate themselves through the Authentication Server before contacting the Centralized Party
 - Centralized Party must verify the authenticity of the citizen's token
-5. Freshness - Centralized Party must verify if the token has not been used before
+5. Freshness - Centralized Party must verify that the token has not expired or been used before
 6. Non-Repudiation - If a report is in the database then it must be valid
 
 ## 2. Project Development
@@ -41,7 +41,7 @@ The system operates within a distributed network environment and consists of fiv
 
 #### 2.1.1. Design
 
-Our cryptographic library secures citizen-generated reports in JSON format through four primary commands: protect, unprotect, check, ProtectSymmetric and UnprotectSymmetric. 
+Our cryptographic library secures citizen-generated reports in JSON format through five primary commands: protect, unprotect, check, ProtectSymmetric and UnprotectSymmetric. 
 To ensure confidentiality, integrity, and authenticity, before a report enters the network, the citizen must first protect it. 
 ***
 **Confidentiality:**
