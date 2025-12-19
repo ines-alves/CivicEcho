@@ -25,6 +25,21 @@ iptables -F
 /sbin/iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow incoming traffic for established connections
 /sbin/iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow outgoing traffic for established connections
 
+# ========== DoS PROTECTION RULES ==========
+# Prevent connection exhaustion from single IP
+/sbin/iptables -A INPUT -i eth0 -p tcp --dport 8090 \
+  -m connlimit --connlimit-above 10 --connlimit-mask 32 \
+  -j DROP
+
+# drops excess TLS handshakes
+/sbin/iptables -A INPUT -i eth0 -p tcp --dport 8090 --syn \
+  -m hashlimit \
+  --hashlimit-name tls_handshake_8090 \
+  --hashlimit-above 3/second \
+  --hashlimit-burst 10 \
+  --hashlimit-mode srcip \
+  -j DROP
+
 # ========== BLOCKING RULES ==========
 /sbin/iptables -A INPUT -p tcp --dport 22 -j DROP      # SSH
 /sbin/iptables -A OUTPUT -p tcp --dport 22 -j DROP     # SSH
@@ -69,3 +84,5 @@ mvn clean install
 cd ../authenticationServerApp/
 mvn clean install
 mvn compile exec:java
+
+iptables -L INPUT -vn --line-numbers
