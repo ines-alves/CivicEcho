@@ -1,12 +1,13 @@
 package service;
 
+import java.util.Base64;
+
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import model.TokenManager;
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
-import java.util.Base64;
 
 public class TokenService {
 
@@ -40,12 +41,12 @@ public class TokenService {
             }
 
             TokenManager tokenManager = TokenManager.getInstance();
-            /* Good for seeing the tokens
+          
             for (int i = 1; i < parts.length; i++) {
-                System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
+                //System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
                 tokenManager.addToken(parts[i]);
             }
-            */
+
             return true;
 
         } catch (Exception e) {

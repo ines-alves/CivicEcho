@@ -1,15 +1,16 @@
 package service;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
+
 import javax.net.ssl.SSLSocket;
 
 import model.TokenManager;
 import report.ProtectDocumentLibrary;
 import sockets.SocketUtils;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
-import java.io.File;
 
 public class LoginService {
     
@@ -77,12 +78,12 @@ public class LoginService {
             String readToken = parts[2];
             tokenManager.setReadToken(readToken);
 
-            /* Good for seeing the tokens
+           
             for (int i = 3; i < parts.length; i++) {
-                System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
+                //System.out.println("---\n" + "Adding token [" + (i-2) + "] " + parts[i] + "\n---"); //DEBUG
                 tokenManager.addToken(parts[i]);
             }
-            */
+            
 
             return true;
 

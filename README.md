@@ -9,9 +9,11 @@
 | 1107157 | Inês Alves        | <https://github.com/ines-alves>        | <mailto:ines.b.alves@tecnico.ulisboa.pt>               |
 
 
-![Alice](img/alice.png) ![Bob](img/bob.png) ![Luca](img/luca.png)
-
-*(add face photos with 150px height; faces should have similar size and framing)*
+<div>
+  <img src="img/ines.JPG" alt="Inês" style="width:150px; height:150px; object-fit:contain;">
+  <img src="img/diogo.jpeg" alt="Diogo" style="width:150px; height:150px; object-fit:contain;">
+  <img src="img/luca.png" alt="Luca" style="width:150px; height:150px; object-fit:contain;">
+</div>
 
 ## Contents
 
@@ -28,12 +30,13 @@ This document presents installation and demonstration instructions.
 
 ### Key Features
 
-- **Anonymous Reporting**: Citizens can submit reports without revealing their identity
-- **Authenticated Access**: Token-based authentication ensures only legitimate citizens can create reports
+- **Anonymous Reporting**: Reports can't be traced back to their author
+- **Authenticated Access**: Token and certificate based authentication ensures only legitimate citizens can create reports
 - **Document Security**: Hybrid encryption (AES-GCM + RSA) protects data confidentiality and integrity
-- **Multi-Municipality Support**: System supports multiple municipalities (Lisbon, Porto)
+- **Multi-Municipality Support**: System supports multiple municipalities and it's flexible (currently Lisbon and Porto)
 - **Replay Protection**: Prevents token reuse and replay attacks
-- **Secure Communication**: TLS 1.3 with mutual authentication between all components
+- **Secure Communication**: TLS 1.3 with mutual authentication between all components, except in authentication server
+- **Audit File**: Logging mechanism that allows to trace back the complete information flow through the system
 
 ## System Architecture
 
@@ -43,7 +46,7 @@ The system operates in a distributed network environment with five main componen
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │ Authentication  │    │     Citizens     │    │  Centralized    │
 │     Server      │◄──►│                  │◄──►│     Party       │
-│  192.168.0.20   │    │  192.168.0.100+  │    │ 192.168.0.10    │
+│  192.168.0.20   │    │    192.168.0.X   |    │ 192.168.0.10    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
                                                         │
                        ┌─────────────────┐              │
@@ -52,24 +55,24 @@ The system operates in a distributed network environment with five main componen
                        └─────────────────┘              │
                                 △                       │ 
                                 │                       │
-                       ┌─────────────────┐              │
-                       │ Municipalities  │◄─────────────┘
-                       │ Lisbon: 192.168.1.1
-                       │ Porto:  192.168.1.2
-                       └─────────────────┘
+                       ┌─────────────────────┐          │
+                       │ Municipalities      │◄─────────┘
+                       │ Lisbon: 192.168.1.1 |
+                       │ Porto:  192.168.1.2 |
+                       └─────────────────────┘
 ```
 
 ### Components
 
-1. **CitizenApp**: Client application for report creation and management
+1. **CitizenApp**: Client application for report creation/reading
 2. **AuthenticationServer**: Issues tokens and manages citizen enrollment
 3. **CentralizedParty**: Trusted intermediary for anonymization and routing
-4. **MunicipalityApp**: Processes reports for specific municipalities
+4. **MunicipalityApp**: Processes reports and verifies integrity
 5. **Database**: PostgreSQL database for report storage
 
 ## Installation
 
-To see the project in action, it is necessary to setup a virtual environment with 5 networks and 7 virtual machines.
+To see the project in action, it is necessary to setup 3 virtual networks and 7 virtual machines.
 
 ### Prerequisites
 
@@ -84,15 +87,53 @@ All virtual machines should be based on **Kali Linux 64-bit**.
 
 ### Network Configuration
 
-The system uses the following network topology:
-- **COONNECTED TO INTERNET** CentralizedParty
+The 3 following virtual networks should be configured on /Library/Preferences/VMware\ Fusion/networking:
 - **VMNET2**: 192.168.0.0/24 (Citizens + CentralizedParty + AuthServer)
 - **VMNET3**: 192.168.1.0/24 (CentralizedParty ↔ Municipalities)
 - **VMNET4**: 192.168.2.0/24 (Municipalities ↔ Database)
+```
+answer VNET_2_HOSTONLY_NETMASK 255.255.255.0
+answer VNET_2_HOSTONLY_SUBNET 192.168.0.0
+answer VNET_3_HOSTONLY_NETMASK 255.255.255.0
+answer VNET_3_HOSTONLY_SUBNET 192.168.1.0
+answer VNET_4_HOSTONLY_NETMASK 255.255.255.0
+answer VNET_4_HOSTONLY_SUBNET 192.168.2.0
+
+```
+
+**Citizen Machine**
+
+1. Add a network adapter connected to `vmnet2` and generate MAC address
+2. Add another network adapter connected to `share with my MAC` and generate MAC address
+**+
+**Authentication Server Machine**
+
+1. Add a network adapter connected to `vmnet2` and generate MAC address
+2. Add another network adapter connected to `share with my MAC` and generate MAC address
+***
+
+**Centralized Party Machine**
+
+1. Add a network adapter connected to `vmnet2` and generate MAC address
+2. Add another network adapter connected to `share with my MAC` and generate MAC address
+3. Add another network adapter connected to `vmnet3` and generate MAC address
+***
+
+**Municipality Machine**
+
+1. Add a network adapter connected to `vmnet3` and generate MAC address
+2. Add another network adapter connected to `share with my MAC` and generate MAC address
+3. Add another network adapter connected to `vmnet4` and generate MAC address
+***
+
+**Database Machine**
+
+1. Add a network adapter connected to `vmnet4` and generate MAC address
+2. Add another network adapter connected to `share with my MAC` and generate MAC address
 
 ### Certificate Generation 
 
-**Before setting up any VMs, you must generate the certificates for all components:**
+**Before running the application, you must generate the certificates for these components:**
 
 ```bash
 ./generate-fixed-certificates.sh
@@ -103,9 +144,8 @@ This script creates certificates for:
 - Centralized Party
 - Municipalities (Lisbon, Porto)
 - Database Server
-- Citizens (generated dynamically during enrollment)
 
-### Machine Configurations
+### Machine Initialization
 
 **Only after certificate generation is complete**, proceed with VM setup using the initialization scripts in the `initScripts/` directory.
 
@@ -116,10 +156,13 @@ This machine runs the authentication server that handles citizen enrollment and 
 **Setup:**
 ```bash
 cd initScripts/
+chmod +x authServer.sh
 sudo ./authServer.sh
 ```
 
 **Start Service:**
+
+The script already initiates the app but if you wish to run manually use:
 ```bash
 cd authenticationServerApp/
 mvn compile exec:java
@@ -137,10 +180,13 @@ This machine acts as a gateway and anonymization service between citizens and mu
 **Setup:**
 ```bash
 cd initScripts/
+chmod +x centralizedParty.sh
 sudo ./centralizedParty.sh
 ```
 
 **Start Service:**
+
+The script already initiates the app but if you wish to run manually use:
 ```bash
 cd centralizedPartyApp/
 mvn compile exec:java
@@ -158,6 +204,7 @@ This machine runs PostgreSQL database for storing municipal reports.
 **Setup:**
 ```bash
 cd initScripts/
+chmod +x database_setup.sh
 sudo ./database_setup.sh
 ```
 
@@ -180,10 +227,13 @@ sudo -u postgres psql -d municipality -c "SELECT * FROM reports;"
 **Setup:**
 ```bash
 cd initScripts/
+chmod +x municipalityLisbon.sh
 sudo ./municipalityLisbon.sh
 ```
 
 **Start Service:**
+
+The script already initiates the app but if you wish to run manually use:
 ```bash
 cd municipalityApp/
 mvn compile exec:java -Dexec.args="lisbon"
@@ -194,10 +244,13 @@ mvn compile exec:java -Dexec.args="lisbon"
 **Setup:**
 ```bash
 cd initScripts/
+chmod +x municipalityPorto.sh
 sudo ./municipalityPorto.sh
 ```
 
 **Start Service:**
+
+The script already initiates the app but if you wish to run manually use:
 ```bash
 cd municipalityApp/
 mvn compile exec:java -Dexec.args="porto"
@@ -210,112 +263,78 @@ Starting [municipality] municipality server on port 8091...
 Municipality server listening on port 8091...
 ```
 
-#### 5. Citizen Machines (192.168.0.100+)
+#### 5. Citizen Machines (192.168.0.X)
 
 **Setup:**
 ```bash
 cd initScripts/
+chmod +x citizen1.sh 
 sudo ./citizen1.sh  
 ```
 
-## Demonstration
+```bash
+cd initScripts/
+chmod +x citizen2.sh 
+sudo ./citizen2.sh  
+```
 
-Now that all networks and machines are up and running, let's demonstrate the key features of CivicEcho.
-
-### 1. Citizen Enrollment and Login
-
-Start the citizen application and perform enrollment:
+The script already initiates the app but if you wish to run manually use:
 
 ```bash
 cd citizenApp/
 mvn compile exec:java -Dexec.args="citizen1"
 ```
+## Demonstration
 
-**Expected Flow:**
-1. Certificate generation for citizen1
-2. Authentication server enrollment
-3. Successful login
-4. **Automatic token grant**: First-time login automatically grants 10 tokens
+To show the flow of the application we created a `demo` script that performs the login, creates 10 reports, tries to request more tokens and then reads all reports from its municipality. The token request will fail due to the spam prevention mechanisms.
 
-**Security Evidence:** The system generates unique certificates per citizen and establishes TLS 1.3 connections. New citizens receive an initial allocation of 10 tokens upon first successful authentication.
+The message payloads, evidence of the security mechanisms in action and relevant messages can be found in the Audit File: `audit.log`.
 
-### 2. Token Management
-
-Citizens receive 10 tokens automatically upon first login. When tokens are exhausted, additional tokens can be requested:
-
-```
-┌─────────────────────────────────┐
-│       CvicEcho CITIZEN APP      │
-│             REPORT              │
-│       AVAILABLE TOKENS: 0       │
-├─────────────────────────────────┤
-│ 3 ▸ Request Tokens              │
-└─────────────────────────────────┘
-```
-
-**Security Evidence:** Tokens are cryptographically signed by the authentication server and contain location-based authorization.
-
-### 3. Report Creation
-
-Create a civic report with encrypted protection:
-
-```
-┌──────────────────────────────────────────────┐
-│                 FINAL PREVIEW                │
-├──────────────────────────────────────────────┤
-│ Report ID   ▸ echo_71420                     │
-│ Timestamp   ▸ 2025-12-16T23:33:59.060245290Z │
-│ Category    ▸ Infrastructure                 │
-│ Location    ▸ lisbon                         │
-│ Latitude    ▸ 38.7223                        │
-│ Longitude   ▸ -9.1393                        │
-│ Description ▸ Pothole on Main Street         │
-└──────────────────────────────────────────────┘
-```
-
-**Security Evidence:** Reports are encrypted using hybrid cryptography (AES-GCM + RSA) before transmission.
-
-### 4. End-to-End Verification
-
-The system demonstrates the following security mechanisms:
-
-**Token Verification:**
 ```bash
-# Centralized Party validates tokens
-INVALID TOKEN: [token] # If token is invalid/expired
-USED TOKEN: [token]    # If token was already used (replay protection)
+chmod +x demo.sh
+./demo.sh
 ```
 
-**Database Storage:**
-```sql
--- Verify report storage
-SELECT report_id, location, created_at FROM reports WHERE location = 'lisbon';
+**Audit File example:**
 ```
-
-**Network Security:**
-All communication uses TLS 1.3 with mutual certificate authentication:
-- Citizens ↔ Authentication Server
-- Citizens ↔ Centralized Party
-- Centralized Party ↔ Municipalities
-- Municipalities ↔ Database
-
-### 5. Read Reports
-
-Citizens can query reports from their municipality:
-
+--------------------------------------------------
+Time   : 19-12-2025 15:55:42
+Actor  : CLIENT
+Action : UNPROTECTED REPORT JSON
+Data   : {
+  "report_id": "echo_08269",
+  "timestamp": "2025-12-19T15:55:23.391107916Z",
+  "category": "Demo report",
+  "location": "lisbon",
+  "coordinates": {
+    "latitude": 948759.0,
+    "longitude": 938479.0
+  },
+  "description": "this is a demo"
+}
+--------------------------------------------------
+Time   : 19-12-2025 15:55:42
+Actor  : CLIENT
+Action : PROTECTED REPORT JSON
+Data   : "eyJjaXBoZXJlZCI6IjdHQVJXeXJHVCtjcDNUVittV3BXWmpnMGVoNGNUSWg0NS9SbG51RXJuYi81dlFEd3FJZHNLeXFOMUJGSmtlOHA1LzJ3eHhJbTlXZE5KZjFLZHNORFowR2doTU04Sk1RT1ZKY0w2VklvRERWSnNVVnp1cGVoS21LVksxQkNRdGZTMmJOM2lsVlBYaE9uUFpHRjdCT0h4b0ZlRlk2VThXSlRtdnNMT3VqUHRGSHNLUGM1YmVvYVFVS1JXRGNod0ZrREZVYXdON2wvc004anBmK0pQbmx4NHVyM0VBWjlpNktyQ3Y3OEhKMG5NN0F0T0w5Z2RHakFJK0FWNU00OW81RTkxR1gwUG9YQSt6cFJhNkpWTzFnNEsxTXdoUmgyejlLcnExWUMxUVx1MDAzZFx1MDAzZCIsIml2IjoiNGRiMCtzWHIrdExEVGFYaCIsImFhZCI6eyJ0aW1lc3RhbXAiOiIyMDI1LTEyLTE5VDE1OjU1OjIzLjM5MTEwNzkxNloiLCJsb2NhdGlvbiI6Imxpc2JvbiIsIm9wZXJhdGlvbiI6IkNSRUFURSIsInRva2VuIjoiSzI1Uk9VZDFSRVYzZEVzNFdERkZSa0ppWjNneU1HRndRV0pHWXl0cU0wbzVUbkZsSzIxMVFVczRXVDA2TVRjMk5qRTJNRE14T1RVME1qcE1hWE5pYjI0XHUwMDNkLVNtQ0gyQlNiTitnNWdrdVh4dEEvM2JsT2lDQ0dkVWZpSExaTzF2elVJc1UyU2tzeGllUmVBQ3FyelRvVkczcGFnd21VblJNU1pQb29XNkJ1ZDMwc0JHL0YwWG1Gb1lsVlArRUdlRWduTEhXK1Z6QVg0U0JOZ1d5VjdFRjFJTjcrSklTcXNCZFlOaWpEMmplZldsMm5wWnJlV0FrYlJDYnpnaDZKenkxNTcyMDhDeWdsdC9FT0c2QStTZ2VoSXU0bGJDeUFzK2pocXpUeFFnMWtLbVBLRjZIQm1iRUpWc21NTE42OC9ZVDFLVnNQU0RQV3MzYmpVNk5vTlZ1UkpkSFRQVnFZN3NWSEg5bXNNaTJpeEI2SEl2WFJJc2I3WGNWb2VxcmNkNjZyTUNVMXRUdndFZkZaMWI4WUJLc0Y2UFk1b3pHZUw0aER0Nm9VWVVORmVuVzhPd1x1MDAzZFx1MDAzZCJ9LCJrZXkiOiJtSkdMeHZPYjRWWUI1dE5LcytnMWhsOFBvNVVkVHRaOEk0UGVnOW5vaTl4UElIenlnOXN6eDNscy9CYnBTeUJxNVhoaVBwbXJZRVlqYXVqVWlEdmtDR3dCZ0c1ODBQN2V3SVpqVUdjUnBaTlRvU0t3b3BYTkcwd1l2cSt1TjRpODRRK3ZtWmFhYW5DV1RjUDZXYkRwSDR4clY4MnJBWUYzT09Zd0d5dHk5MjJTczBrY0VvUndXMHlNS3lqYUE5ZDl4WVFKNWx2WDdyWTBlbmM5NVdUUy85RWtzakp5dmdSWVRjTWlSclVRV2U3TzZzWDAxa3BlckRLTGFNUU80b2pOdlpwMXpSOG0rbzcvRDkvRVpqQnFiWE9JcFllblVoTDN6R0dFRUJPSndaZHBlTW5mTW45YmkraFBiTDNIaG9tVTgrdU5xRktpUklSL2dQSTRPR0xxdVFcdTAwM2RcdTAwM2QifQ\u003d\u003d"
+--------------------------------------------------
+Time   : 19-12-2025 15:55:42
+Actor  : MUNICIPALITY
+Action : RECEIVED PROTECTED JSON
+Data   : {
+  "ciphered": "7GARWyrGT+cp3TV+mWpWZjg0eh4cTIh45/RlnuErnb/5vQDwqIdsKyqN1BFJke8p5/2wxxIm9WdNJf1KdsNDZ0GghMM8JMQOVJcL6VIoDDVJsUVzupehKmKVK1BCQtfS2bN3ilVPXhOnPZGF7BOHxoFeFY6U8WJTmvsLOujPtFHsKPc5beoaQUKRWDchwFkDFUawN7l/sM8jpf+JPnlx4ur3EAZ9i6KrCv78HJ0nM7AtOL9gdGjAI+AV5M49o5E91GX0PoXA+zpRa6JVO1g4K1MwhRh2z9Krq1YC1Q\u003d\u003d",
+  "iv": "4db0+sXr+tLDTaXh",
+  "aad": {
+    "timestamp": "2025-12-19T15:55:23.391107916Z",
+    "location": "lisbon",
+    "operation": "CREATE",
+    "token": "K25ROUd1REV3dEs4WDFFRkJiZ3gyMGFwQWJGYytqM0o5TnFlK211QUs4WT06MTc2NjE2MDMxOTU0MjpMaXNib24\u003d-SmCH2BSbN+g5gkuXxtA/3blOiCCGdUfiHLZO1vzUIsU2SksxieReACqrzToVG3pagwmUnRMSZPooW6Bud30sBG/F0XmFoYlVP+EGeEgnLHW+VzAX4SBNgWyV7EF1IN7+JISqsBdYNijD2jefWl2npZreWAkbRCbzgh6Jzy157208Cyglt/EOG6A+SgehIu4lbCyAs+jhqzTxQg1kKmPKF6HBmbEJVsmMLN68/YT1KVsPSDPWs3bjU6NoNVuRJdHTPVqY7sVHH9msMi2ixB6HIvXRIsb7XcVoeqrcd66rMCU1tTvwEfFZ1b8YBKsF6PY5ozGeL4hDt6oUYUNFenW8Ow\u003d\u003d"
+  },
+  "key": "mJGLxvOb4VYB5tNKs+g1hl8Po5UdTtZ8I4Peg9noi9xPIHzyg9szx3ls/BbpSyBq5XhiPpmrYEYjaujUiDvkCGwBgG580P7ewIZjUGcRpZNToSKwopXNG0wYvq+uN4i84Q+vmZaaanCWTcP6WbDpH4xrV82rAYF3OOYwGyty922Ss0kcEoRwW0yMKyjaA9d9xYQJ5lvX7rY0enc95WTS/9EksjJyvgRYTcMiRrUQWe7O6sX01kperDKLaMQO4ojNvZp1zR8m+o7/D9/EZjBqbXOIpYenUhL3zGGEEBOJwZdpeMnfMn9bi+hPbL3HhomU8+uNqFKiRIR/gPI4OGLquQ\u003d\u003d"
+}
+--------------------------------------------------
+...
 ```
-┌─────────────────────────────────┐
-│  How many reports do you want?  │
-├─────────────────────────────────┤
-│ 1 ▸ Custom                      │
-│ 2 ▸ All                         │
-│ 0 ▸ Go Back                     │
-└─────────────────────────────────┘
-```
-
-**Security Evidence:** Responses are symmetrically encrypted using extracted keys, ensuring confidentiality.
-
-This concludes the demonstration of CivicEcho's secure civic reporting system.
 
 ## Additional Information
 
@@ -335,8 +354,6 @@ We use [SemVer](http://semver.org/) for versioning.
 ### License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) for details.
-
-*(switch to another license, or no license, as you see fit)*
 
 ----
 END OF README

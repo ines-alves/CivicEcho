@@ -1,10 +1,9 @@
 package token;
 
-import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.Base64;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TokenManager {
     private final Map<String, Long> writeTokens; // token -> expiration timestamp
@@ -21,7 +20,7 @@ public class TokenManager {
         long expirationTimestamp = Long.parseLong(tokenParts[1]);
 
         writeTokens.put(token, expirationTimestamp);
-        System.out.println("Stored WRITE token: " + token + " (expires at: " + Instant.ofEpochMilli(expirationTimestamp) + ")");
+        System.out.println("Stored WRITE token");
     }
 
     public boolean verifyUsedToken(String token) {
