@@ -222,7 +222,7 @@ The flow of communication ( citizen <-> centralized party <-> municipality <-> d
 ***
 **Non-repudiation:**
 
-Together the centralized party authenticity verification, municipality report validation and TLS certificate verification provide `[R6: Non-repudiation]`, guaranteeing that if a report reaches the database it is valid.
+Together the centralized party authenticity verification, municipality report integrity validation and TLS certificate verification provide `[R6: Non-repudiation]`, guaranteeing that if a report reaches the database it is valid.
 
 ### 2.3. Security Challenge
 
@@ -369,7 +369,7 @@ Attacker Position:
 - How:
   * Tries to inject SQL code in the input fields of the report.
 - Why It Fails:
-  * The municipality performs sanitization of the report fields before before executing the database operations.
+  * The municipality performs sanitization of the report fields before executing the database operations.
   * The database doesn't allow delete and update operations.
 
 
@@ -391,7 +391,7 @@ In the context of the challenge, the citizen needs to send a different token per
 The centralized party, upon receiving a request, checks if this token is already in the list of used tokens.
 It then verifies the authenticity and integrity of the token, by checking if the signature was created by the authentication server, as well as if the location in the report matches the location in the token. 
 
-For read operation the citizens must send the read token and the number of reports they wish to read from their municipality. This operation is validated by the municipality that verifies the authenticity of the token and the location in the token, meaning the permission to read from that municipality.
+For read operation the citizens must send the read token and the number of reports they wish to read from their municipality. This operation is validated by the centralized party that verifies the authenticity of the token and the location in the token, meaning the permission to read from that municipality.
 
 Citizens can issue a request to the authentication server for more tokens, if they have all been used or expired. To provide citizen authentication, a signature is sent with this request.
 Before generating more tokens, the server verifies if the citizen has waited the specified cooldown time. If so, the server generates 10 new write tokens and sends them to the citizen.

@@ -105,7 +105,8 @@ answer VNET_4_HOSTONLY_SUBNET 192.168.2.0
 
 1. Add a network adapter connected to `vmnet2` and generate MAC address
 2. Add another network adapter connected to `share with my MAC` and generate MAC address
-**+
+***
+
 **Authentication Server Machine**
 
 1. Add a network adapter connected to `vmnet2` and generate MAC address
