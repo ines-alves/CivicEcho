@@ -5,8 +5,12 @@
 
 The system operates within a distributed network environment and consists of five primary entities: an Authentication Server, which authenticates citizens and issues tokens that allow them to submit reports, Citizens, who can create and read reports, a Centralized Party, which acts as a trusted intermediary responsible for token verification and request forwarding, Municipalities, which process and respond to these requests and a Database Server, which stores incoming reports and provides access to them.
 
+<div style="width:75%; margin: auto;">
 
-![Business Scenario](img/businessScenario.png)
+![Create Report](img/createReport.png)
+![Read Report](img/readReport.png)
+</div>
+
 ### 1.1 Assumptions
 
 1. The public keys from the municipalities, centralized party, authentication server and database are well known.
@@ -128,30 +132,32 @@ Key classes come from:
 
 Our system is composed of citizens and 5 servers, divided into 3 subnetworks:
 ***
-***192.168.0.0 subnet***
+***192.168.0.0 subnet (vmnet2)***
 
 This network is composed of citizens and the public servers: Centralized Party and Authentication Server on eth0. 
 
 These machines are connected to the vmnet2 on sw1 and they are all connected to the internet. 
 
 ***
-***192.168.1.0 subnet***
+***192.168.1.0 subnet (vmnet3)***
 
 This network is composed of Municipalities, which are private servers, and is the connection point between the Centralized Party and the internal network.
 
 These machines are connected to the vmnet3 on sw2 and the Municipalities don't have access to the internet. 
 
 ***
-***192.168.2.0 subnet***
+***192.168.2.0 subnet (vmnet4)***
 
 This network is composed of the Database, which is also part of the internal network, and is the connection point with the Municipality servers.
 
 These machines are connected to the vmnet4 on sw3 and the Database doesn't have access to the internet. 
 
+This may seem as an overhead, but we decided to add this subnet as an extra layer of security incase vmnet3 is compromised.
+
 ***
 ***Firewall Rules***
 
-We implemented a DMZ in order to protect the internal network (Municipalities and Database) from network attacks.
+We implemented a DMZ in order to protect the internal network (Municipalities and Database) from network attacks. We also implemented a script to simulate a DoS attack to the Authentication Server and demonstrate our protection against it: [dos_attack.py](./dos_attack.py).
 
 All systems implement a default-deny policy, meaning they block everything by default and then allow only specific, necessary traffic.
 
@@ -167,6 +173,8 @@ Centralized Party:
 - Accepts citizen connections on port 8090 from the 192.168.0.0/24 subnet via eth0
 - Allows outgoing connections to municipalities on port 8091 via eth1
 - Permits basic internet services: HTTP, DNS and NTP
+- Limits connections from a single IP to prevent connection exhaustion attacks, dropping any new connections from an IP that already has 10 active sessions on port 8090.
+- Throttles TLS handshake attempts to protect against SYN flood attacks, allowing a maximum of 3 new handshakes per second (with a 10-connection burst) from any single source IP.
 
 Municipality Servers:
 - Accepts connections from Centralized Party on port 8091 via eth0
@@ -175,6 +183,8 @@ Municipality Servers:
 Authentication Server:
 - Accepts citizen connections on port 8090 from the 192.168.0.0/24 subnet via eth0
 - Permits basic internet services: HTTP, DNS and NTP
+- Limits connections from a single IP to prevent connection exhaustion attacks, dropping any new connections from an IP that already has 10 active sessions on port 8090.
+- Throttles TLS handshake attempts to protect against SYN flood attacks, allowing a maximum of 3 new handshakes per second (with a 10-connection burst) from any single source IP.
 
 Database Server:
 - Accepts PostgreSQL connections from Lisbon and Porto municipality IPs (192.168.2.1 and 192.168.2.2)
@@ -183,12 +193,17 @@ Database Server:
 ***
 ***Technologies used***
 
-(_Justify the choice of technologies for each server._)
+We decided to implement all servers and client app in Java due to its well known and verified cryptographic libraries and its TLS 1.3 secure sockets support. 
+
+The database is implemented in PostgreSQL due to its ability to store json objects directly, making the storage of reports easier and efficient, as well as supporting TLS 1.3.
 ***
-***Machine Setup***
 
 
-![Infrastructure Diagram](img/network.png)
+<div style="width:75%; margin: auto;">
+
+![Infrastructure Diagram](img/networkDiagram.png)
+</div>
+
 #### 2.2.2. Server Communication Security
 
 All communications are implemented with TLS 1.3 secure sockets with cipher suite TLS_AES_128_GCM_SHA256.
@@ -227,27 +242,136 @@ These requirements implied modifications in the authentication process and citiz
 
 The Centralized Party, Municipalities, Authentication Server and Database are all fully trusted servers.
 The Citizens are untrusted entities that can misbehave in different ways.
+***
+***Audit File***
 
-**Citizen as an attacker**
+The audit file is used to record all important actions that occur in our application, such as client requests, data protection steps, token validation, and responses exchanged between components. Each entry includes a timestamp, the actor (client, centralized server, or municipality), the performed action, and the related data.
+
+This audit file is important because it allows us to trace the complete flow of information through the system. It supports debugging, accountability, and security analysis by clearly showing who performed each action and when. In addition, the audit log can help detect possible attacks, such as unauthorized access attempts, tampering with protected data, replay attacks, or invalid tokens being used. By reviewing the audit file, suspicious behavior can be identified early and investigated, improving the overall security of the application.
+***
+**1. External Attacker with Access to VMnet2 (Public Network)**
+
+Attacker Position:
+* No trusted identity (no valid tokens, certificates, or known public key).
+* Has full network access to VMnet2, which is considered public.
+* No control over any citizen virtual machine.
+* Interacts only through exposed services over VMnet2.
+***
+***Man-in-the-Middle Attempts on VMnet2***
+- How:
+  * The attacker intercepts traffic on VMnet2 using ARP spoofing, rogue routing, or packet capture.
+  * Attempts to modify or inject packets during TLS sessions.
+- Why It Fails:
+  * TLS 1.3 enforces endpoint authentication and integrity.
+  * Modified packets are detected and connections are terminated.
+  * Certificate validation prevents service impersonation.
+***
+***Passive Traffic Observation***
+- How:
+  * The attacker passively captures all packets on VMnet2.
+  * Stores encrypted TLS traffic and application-layer ciphertexts.
+- Impact:
+  * Metadata leakage (timing, packet size).
+  * No access to report contents or tokens.
+- Why It Fails:
+  *  Strong encryption and forward secrecy prevent decryption.
+***
+***Token Replay Attacks***
+- How:
+  * The attacker captures a valid token transmitted over VMnet2.
+  * Replays it in a new request to the centralized party.
+- Why It Fails:
+  * Tokens are bound to integrity checks and usage tracking.
+  * Reuse detection causes rejection.
+  * Also the token is inside the TLS message so the attacker doesn’t have access to it.
+***
+***Token Acquisition and Abuse***
+- How:
+  * Attacker tries to acquire valid tokens from the auth server 
+  * Attacker tries submits unauthorized reports with those tokens
+- Why It Fails:
+  * Auth server only signs certificates and provides tokens to valid citizens 
+  * Auth server matches the signature of the request to the information he has about valid citizens
+***
+***Token Forgery Attempts***
+- How:
+  * The attacker crafts arbitrary tokens or modifies captured ones.
+  * Attempts to guess token values or signatures.
+- Why It Fails:
+  * Tokens are cryptographically signed by the Auth Server.
+  * Signature verification detects forgery or tampering.
+  * 256 bits random numbers increase entropy  impossible to find the digest
+***
+***Message Injection***
+- How:
+  * Establish a valid TLS session.
+  * Send an application-formatted message.
+  * The attacker sends random or malformed encrypted payloads as reports.
+  * Tries to exploit protocol parsing or cryptographic errors.
+- Why It Fails:
+  * The attacker cannot:
+    - Authenticate as a client.
+    - Complete the handshake.
+    - Send application data.
+  * Authenticated encryption ensures invalid ciphertexts are rejected.
+  * No meaningful data is accepted without valid keys and tokens.
+***
+***Denial-of-Service (Availability Attack)***
+- How:
+  * Floods VMnet2-exposed services with TLS handshakes or requests.
+- Impact:
+  * Service slowdown or temporary unavailability.
+- Limitation:
+  * No breach of confidentiality or integrity.
+  * Firewall blocks excessive connection attempts
+  * Firewall caps the maximum number of connections per IP
+***
+**2. Malicious Attacker with Control of a Citizen VM**
+
+Attacker Position:
+* Fully controls a legitimate citizen machine.
+* Possesses valid client credentials and cryptographic material.
+* Can communicate normally over VMnet2 using trusted software or modified clients.
+***
+***Legitimate Token Acquisition and Abuse***
+- How:
+  * Uses the client to authenticate normally.
+  * Obtains valid tokens from the Auth Server.
+  * Try to spam report creation
+- Why It Fails:
+  * Tokens can only be used once 
+***
+***Submission of Malicious or False Reports***
+- How:
+  * Encrypts arbitrary data using the municipality’s public key.
+  * Submits reports that are syntactically valid but semantically malicious.
+- Impact:
+  * System accepts the report as authentic.
+  * Content correctness cannot be guaranteed.
+- Why It Is Allowed:
+  * This is a misuse of legitimate functionality, not a protocol break.
+***
+***Access to Confidential Responses Intended for That Client***
+- How:
+  * Performs read requests legitimately.
+  * Decrypts responses using the request-bound symmetric key.
+- Limitation:
+  * Can only access data authorized for that client.
+  * Cannot read stored data from other municipalities.
+***
+***Attempted Unauthorized read***
+- How:
+  * Tries to modify tokens to read from other municipalities .
+- Why It Fails:
+  * Token authenticity and integrity checks prevent this attack.
 ***
 ***SQL Injection***
+- How:
+  * Tries to inject SQL code in the input fields of the report.
+- Why It Fails:
+  * The municipality performs sanitization of the report fields before before executing the database operations.
+  * The database doesn't allow delete and update operations.
 
-A malicious citizen may try to inject SQL code in the input fields of the report.
-
-In order to protect against that, the municipality performs sanitization of the report fields before before executing the database operations.
-***
-***DoS attack***
-
-A malicious citizen may try to overload the server.
-
-We block all ssh and icmp traffic on all servers.
-
-***
-***Eavesdropping***
-
-A malicious citizen may try to observe traffic between another citizen and the servers.
-
-We block Telnet in all servers to prevent traffic observation.
 
 #### 2.3.3. Solution Design and Implementation
 **Freshness:**
@@ -272,20 +396,28 @@ For read operation the citizens must send the read token and the number of repor
 Citizens can issue a request to the authentication server for more tokens, if they have all been used or expired. To provide citizen authentication, a signature is sent with this request.
 Before generating more tokens, the server verifies if the citizen has waited the specified cooldown time. If so, the server generates 10 new write tokens and sends them to the citizen.
 
+<div style="width:75%; margin: auto;">
+
 ![Token diagram](img/tokens.png)
+</div>
+
 ## 3. Conclusion
 
-(_State the main achievements of your work._)
+In this project we successfully developed a secure citizen reporting system that balances user anonymity with report integrity through a hybrid cryptographic scheme and token-based authentication.
 
-(_Describe which requirements were satisfied, partially satisfied, or not satisfied; with a brief justification for each one._)
+All core security requirements: confidentiality, integrity, authentication, freshness, and non-repudiation were fully satisfied and analysed within the attacker model. 
 
-(_Identify possible enhancements in the future._)
+Future enhancements could include more advanced spam-detection mechanisms and misinformation spreading detection. 
 
-(_Offer a concluding statement, emphasizing the value of the project experience._)
+Overall, this project provided experience in designing and implementing a real-world, secure distributed system.
 
 ## 4. Bibliography
 
-(_Present bibliographic references, with clickable links. Always include at least the authors, title, "where published", and year._)
+[Java Cryptography Architecture Reference Guide](https://docs.oracle.com/en/java/javase/11/security/java-cryptography-architecture-jca-reference-guide.html#GUID-2BCFDD85-D533-4E6C-8CE9-29990DEB0190)
+
+[PostegreSQL Connection and Authentication](https://www.postgresql.org/docs/18/runtime-config-connection.html)
+
+[PostgreSQL Secure TCP/IP Connections with SSL](https://www.postgresql.org/docs/18/ssl-tcp.html)
 
 ----
 END OF REPORT
