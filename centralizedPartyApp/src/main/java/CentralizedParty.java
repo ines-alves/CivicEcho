@@ -113,8 +113,7 @@ public class CentralizedParty {
     }
     
     private static String connectToMunicipalityAndForward(String fileName) throws Exception {
-        AuditFile.municipalityReceivesProtected(Files.readString(Paths.get(fileName)));  
-
+        
         // Cleanup expired tokens on every request
         int removed = tokenManager.cleanupExpiredTokens();
         if (removed > 0) {

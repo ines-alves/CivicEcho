@@ -81,9 +81,10 @@ mvn clean install
 cd ../municipalityApp/
 mvn clean install
 mvn compile
+mvn dependency:go-offline
 
 
 ifconfig eth2 down
-mvn exec:java -Dexec.args="lisbon"
+mvn -o exec:java -Dexec.args="lisbon"
 
 ifconfig eth2 up

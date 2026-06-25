@@ -1,4 +1,10 @@
 ######################
+# Private key material — never commit to public repos
+######################
+certificates/
+citizenApp/citizens/
+
+######################
 # Windows metadata files
 ######################
 desktop.ini

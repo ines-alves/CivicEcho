@@ -115,4 +115,4 @@ inputs=(
         echo "${inputs[i]}"
         sleep "${inputs[i+1]}"
     done
-} | mvn exec:java -Dexec.args="citizen1"
+} | timeout 60s mvn exec:java -Dexec.args="citizen1"
